@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import AudioCard from './AudioCard';
 
+const axios = require('axios');
+const cheerio = require('cheerio');
+
 var jsmediatags = require("jsmediatags");
 var tagArray = [];
 var audios = [];
@@ -82,7 +85,18 @@ class Main extends Component
     {
         this.timer = setInterval( () =>{
             this.reRenderPage();
-        }, 500)
+        }, 500);
+
+        const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
+        const dist = "https://www.youtube.com/results?search_query=Never+Really+Get+There+%28Mixed%29"
+
+        axios.get(corsAnywhere + dist)
+            .then( (response) => {
+                console.log(response.data);
+            })
+            .catch( () => {
+
+            });
     }
 
     componentWillUnmount()
