@@ -4,15 +4,17 @@ import AudioCard from './AudioCard';
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-var jsmediatags = require("jsmediatags");
 var tagArray = [];
-var audios = [];
 
 class Main extends Component
 {
     constructor()
     {
         super();
+
+        this.jsmediatags = require('jsmediatags');
+        this.audioCards = [];
+
         this.timer = "";
         this.state = {
             isNeedtoReRender: false
@@ -29,7 +31,7 @@ class Main extends Component
         let fileList = element.target.files;
         Array.from(fileList).map( (each) => {
 
-            jsmediatags.read(each, {
+            this.jsmediatags.read(each, {
                 onSuccess: function(tag) {
                     tag.tags.file = each;
                     tagArray.push(Object.values(tag.tags));
@@ -58,7 +60,7 @@ class Main extends Component
 
         console.log("====Now!!====");
 
-        audios = tagArray.map( (each, i) => {
+        this.audioCards = tagArray.map( (each, i) => {
 
             let audioInfo = {
                 title: each[0],
@@ -90,12 +92,25 @@ class Main extends Component
         const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
         const dist = "https://www.youtube.com/results?search_query=Never+Really+Get+There+%28Mixed%29"
 
-        axios.get(corsAnywhere + dist)
-            .then( (response) => {
-                console.log(response.data);
-            })
-            .catch( () => {
+        let chunk = [];
 
+        axios.get(corsAnywhere + dist)
+            .then((response) => {
+
+                let $ = cheerio.load(response.data);
+
+                $('script').each( (i, element) => {
+                    chunk.push($(element));
+                    console.log(i);
+                });
+
+                let length = chunk.length;
+                const chunkIncludesVideoId = $(chunk[length - 2]).contents()[0].data;
+                console.log(chunkIncludesVideoId);
+
+            })
+            .catch( (error) => {
+                console.log(error);
             });
     }
 
@@ -110,7 +125,7 @@ class Main extends Component
         
         return (
             <div className="row">
-                {audios}
+                {this.audioCards}
                 {/* <p>New</p> */}
                 <p>
                     <input type="file" onChange={(element) => {this.insertTagInfo(element, true)}} multiple/>
