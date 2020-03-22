@@ -105,9 +105,13 @@ class Main extends Component
                 });
 
                 let length = chunk.length;
-                const chunkIncludesVideoId = $(chunk[length - 2]).contents()[0].data;
-                console.log(chunkIncludesVideoId);
+                const chunkWithVideoId = $(chunk[length - 2]).contents()[0].data;
+                // console.log(chunkWithVideoId);
 
+                const regexForVideoId = /{"videoId":"([^"&?\/\s]{11})"}/g;
+                const matches = [...chunkWithVideoId.matchAll(regexForVideoId)];
+                console.log(matches);
+                
             })
             .catch( (error) => {
                 console.log(error);
