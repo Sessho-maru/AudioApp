@@ -1,5 +1,6 @@
 body {
   margin: 0;
+  overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -10,4 +11,45 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+
+/* ============================================================================== */
+
+
+.App .btn-floating.btn-large {
+  width: 86px;
+  height: 86px;
+}
+.App .btn-floating.btn-large i {
+  line-height: 86px;
+}
+.App .btn-large i {
+  font-size: 4rem;
+}
+
+
+
+.App .btn-floating.btn-small  {
+  width: 56px;
+  height: 56px;
+}
+.App .btn-floating.btn-small i {
+  line-height: 56px;
+}
+.App .btn-small i {
+  font-size: 2rem;
+}
+
+
+
+.App #now_playing {
+  height:13vh;
+  display: flex;
+  align-items: center;
+}
+.App #content {
+  height:87vh;
+  display:block;
+  overflow:auto;
 }

@@ -20,9 +20,23 @@ class Main extends Component
             isNeedtoReRender: false
         };
     }
+
+    openFileDialog(mode)
+    {
+        if (mode === true)
+        {
+            let newFileDialog = document.getElementById('new');
+            newFileDialog.click();
+        }
+
+        if(mode === false)
+        {
+            let appendFileDialog = document.getElementById('append');
+            appendFileDialog.click();
+        }
+    }
     
     insertTagInfo = (element, mode) => {
-
         if (mode === true)
         {
             tagArray = [];
@@ -46,11 +60,9 @@ class Main extends Component
         this.setState({
             isNeedtoReRender: true
         });
-
     }
 
     reRenderPage = () => {
-
         console.log("Not Yet!!");
 
         if (this.state.isNeedtoReRender === false)
@@ -89,33 +101,48 @@ class Main extends Component
             this.reRenderPage();
         }, 500);
 
-        const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
-        const dist = "https://www.youtube.com/results?search_query=Never+Really+Get+There+%28Mixed%29"
+        var elems = document.querySelectorAll('.fixed-action-btn');
+        var instances = window.M.FloatingActionButton.init(elems, {
+            direction: 'top'
+        });
 
-        let chunk = [];
+        // Youtube crawler
+        {
+            /*
+            const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
+            const dist = "https://www.youtube.com/results?search_query=Way+Out+West+-+Lullaby+Horizon";
 
-        axios.get(corsAnywhere + dist)
-            .then((response) => {
+            let chunk = [];
 
-                let $ = cheerio.load(response.data);
+            axios.get(corsAnywhere + dist)
+                .then( (res) => {
 
-                $('script').each( (i, element) => {
-                    chunk.push($(element));
-                    console.log(i);
+                    let $ = cheerio.load(res.data);
+                    $('script').each( (i, element) => {
+                        chunk.push($(element));
+                    });
+
+                    let length = chunk.length;
+                    const rawString = $(chunk[length - 2]).contents()[0].data;
+
+                    // console.log(rawString);
+                    
+                    let splited = rawString.split("window[\"ytInitialData\"] = ");
+                    splited = splited[1].split(";\n");
+
+                    // console.log(splited);
+                    
+                    let youTubeJson = JSON.parse(splited[0]);
+
+                    let contentArray = youTubeJson['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];
+                    console.log(contentArray);
+
+                })
+                .catch( (err) => {
+                    
                 });
-
-                let length = chunk.length;
-                const chunkWithVideoId = $(chunk[length - 2]).contents()[0].data;
-                // console.log(chunkWithVideoId);
-
-                const regexForVideoId = /{"videoId":"([^"&?\/\s]{11})"}/g;
-                const matches = [...chunkWithVideoId.matchAll(regexForVideoId)];
-                console.log(matches);
-                
-            })
-            .catch( (error) => {
-                console.log(error);
-            });
+            */
+        }
     }
 
     componentWillUnmount()
@@ -129,17 +156,39 @@ class Main extends Component
         
         return (
             <div className="row">
-                {this.audioCards}
-                {/* <p>New</p> */}
-                <p>
-                    <input type="file" onChange={(element) => {this.insertTagInfo(element, true)}} multiple/>
-                </p>
+                <div className="col s2">
+                    <h1>Navbar</h1>
+                    <h1>Here</h1>
+                    <h1>Navbar</h1>
+                    <h1>Here</h1>
+                    <h1>Navbar</h1>
+                    <h1>Here</h1>
+    
+                    <div className="fixed-action-btn">
+                        <a className="btn-floating btn-small grey lighten-1">
+                            <i className="large material-icons">add</i>
+                        </a>
+                        <ul>
+                            <li>
+                                <a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><i className="material-icons">playlist_add</i></a>
+                            </li>
+                            <li>
+                                <a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><i className="material-icons">queue</i></a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+  
+                <div id="now_playing" className="col s10">
+                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">play_arrow</i></a>
+                </div>
+  
+                <div id="content" className="col s10">
+                    {this.audioCards}
+                </div>
 
-                {/* <p>Add</p> */}
-                <p>
-                    <input type="file" onChange={(element) => {this.insertTagInfo(element, false)}} multiple/>
-                </p>
-                {/* <button onClick={ this.load }>refresh</button> */}
+                <input type="file" id="new" onChange={(element) => {this.insertTagInfo(element, true)}} multiple hidden/>
+                <input type="file" id="append" onChange={(element) => {this.insertTagInfo(element, false)}} multiple hidden/>~``
             </div>
         );  
     }
