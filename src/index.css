@@ -53,3 +53,16 @@ code {
   display:block;
   overflow:auto;
 }
+
+
+
+.App #YTcontent {
+  height:82vh;
+  display:block;
+  overflow:auto;
+}
+
+.App #YTcontent h5:hover {
+  color: #3bc7ff;
+  cursor: pointer;
+}
