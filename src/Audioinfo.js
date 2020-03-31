@@ -12,21 +12,26 @@ class AudioInfo extends Component
         super();
         this.contentArray = [];
         this.YTInfos = [];
-        this.state = { isLoaded: false };
-    }
-
-    arrangeObject = (after, before) => {
-
-
-        
+        this.preloader = "";
+        this.state = { 
+            isntFetchable: false, 
+            isLoaded: false 
+        };
     }
 
     componentDidMount()
     {
-        console.log(this.props.location);
+        if (this.props.location.audioInfo.title === 'untitled' || this.props.location.audioInfo.artist === "")
+        {
+            this.preloader = <div id="preloader">
+                                <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
+                             </div>
+            this.setState({ isntFetchable: true });
+            return;
+        }
 
         const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
-        const dist = `https://www.youtube.com/results?search_query=${this.props.location.searchPhrase}`;
+        const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
         let chunk = [];
 
         axios.get(corsAnywhere + dist)
@@ -54,7 +59,7 @@ class AudioInfo extends Component
                 // need to be seperated as a function
                 this.YTInfos = this.contentArray.map( (each, i) => {
 
-                    let info = {
+                    let youtubeInfo = {
                         videoId: "",
                         thumbnailUrl: "",
                         title: "",
@@ -64,40 +69,42 @@ class AudioInfo extends Component
 
                     console.log(i);
         
+                    // need to be seperated as a function
                     if (each['videoRenderer']['badges'] != undefined)
                     {
                         if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label == "LIVE NOW")
                         {
-                            info.length = "LIVE NOW";
-                            console.log(info.length);
+                            youtubeInfo.length = "LIVE NOW";
+                            console.log(youtubeInfo.length);
                         }
                         else
                         {
-                            info.length = each['videoRenderer']['lengthText']['simpleText'];
-                            console.log(info.length);
+                            youtubeInfo.length = each['videoRenderer']['lengthText']['simpleText'];
+                            console.log(youtubeInfo.length);
                         }
                     }
                     else
                     {
                         if (each['videoRenderer']['lengthText'] != undefined)
                         {
-                            info.length = each['videoRenderer']['lengthText']['simpleText'];
-                            console.log(info.length);
+                            youtubeInfo.length = each['videoRenderer']['lengthText']['simpleText'];
+                            console.log(youtubeInfo.length);
                         }
                         else
                         {
-                            info.length = "LIVE NOW";
-                            console.log(info.length);
+                            youtubeInfo.length = "LIVE NOW";
+                            console.log(youtubeInfo.length);
                         }
                     }
+                    //
         
-                    info.videoId = each['videoRenderer'].videoId;
-                    info.thumbnailUrl = each['videoRenderer']['thumbnail']['thumbnails'][0].url;
-                    info.title = each['videoRenderer']['title']['runs'][0].text;
-                    info.owner = each['videoRenderer']['longBylineText']['runs'][0].text;
+                    youtubeInfo.videoId = each['videoRenderer'].videoId;
+                    youtubeInfo.thumbnailUrl = each['videoRenderer']['thumbnail']['thumbnails'][0].url;
+                    youtubeInfo.title = each['videoRenderer']['title']['runs'][0].text;
+                    youtubeInfo.owner = each['videoRenderer']['longBylineText']['runs'][0].text;
         
                     return (
-                        <YTInfo key={i} videoId={info.videoId} thumbnailUrl={info.thumbnailUrl} title={info.title} owner={info.owner} length={info.length}/>
+                        <YTInfo key={i} YTInfoObj={youtubeInfo} />
                     );
                 //
 
@@ -115,15 +122,36 @@ class AudioInfo extends Component
 
     render()
     {
-        return(
+        console.log(this.props.location);
+        if (this.state.isntFetchable === false)
+        {
+            this.preloader = <div id="preloader">
+                            <div className="preloader-wrapper big active">
+                                <div className="spinner-layer spinner-red-only">
+                                    <div className="circle-clipper left">
+                                        <div className="circle"></div>
+                                    </div>
+                                    <div className="gap-patch">
+                                        <div className="circle"></div>
+                                    </div>
+                                    <div className="circle-clipper right">
+                                        <div className="circle"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+        }
+        
+
+        return (
             <div className="row">
                 <div className="container">
                     <div className="col s7">
-                        <TagInfo tagInfo={ this.props.location.tag }/>
+                        <TagInfo tagInfo={ this.props.location.audioInfo }/>
                     </div>
                     <div className="col s5">
                         <div id="YTcontent">
-                            {this.YTInfos}
+                            { this.state.isLoaded === false ? this.preloader : this.YTInfos }
                         </div>
                     </div>
                 </div>

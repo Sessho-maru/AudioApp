@@ -5,35 +5,37 @@ function AudioCard(props)
 {
     let _play = (event) => {
         event.preventDefault();
-        props.audioSlot.src = URL.createObjectURL(props.audioInfo.file);
+        props.audioSlot.src = URL.createObjectURL(props.audioInfoParams.audioInfo.file);
         props.changePlayState();
     }
 
-    const { data, type } = props.audioInfo.cover;
-    const byteArray = new Uint8Array(data);
-    const blob = new Blob([byteArray], { type });
-    let albumArtUrl = URL.createObjectURL(blob);
+    let albumArtUrl = "";
+    console.log(props.audioInfoParams);
 
-    let audioTag = {
-        cover: albumArtUrl,
-        album: props.audioInfo.album,
-        artist: props.audioInfo.artist,
-        title: props.audioInfo.title,
-        track: props.audioInfo.track,
-        year: props.audioInfo.year,
-    };
-
-    props.link.tag = audioTag;
+    if (typeof(props.audioInfoParams.audioInfo.cover) === "string")
+    {
+        albumArtUrl = props.audioInfoParams.audioInfo.cover;
+        props.audioInfoParams.audioInfo.cover = albumArtUrl;
+    }
+    else
+    {
+        const { data, type } = props.audioInfoParams.audioInfo.cover;
+        const byteArray = new Uint8Array(data);
+        const blob = new Blob([byteArray], { type });
+        albumArtUrl = URL.createObjectURL(blob);
+        
+        props.audioInfoParams.audioInfo.cover = albumArtUrl;
+    }
 
     return (
         <div className="col s2">
             <div className="card hoverable small">
-                <Link to={ props.link }>
+                <Link to={ props.audioInfoParams }>
                     <div className="card-image">
                         <img src={albumArtUrl} />
                     </div>
                     <div className="card-content">
-                        <p>{props.audioInfo.title}</p>
+                        <p>{props.audioInfoParams.audioInfo.title}</p>
                     </div>
                 </Link>
                 <div className="card-action">

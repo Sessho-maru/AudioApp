@@ -18,7 +18,7 @@ class Main extends Component
         this.audioSlot = "";
         this.state = {
             isNeedtoReRender: false,
-            isPlaying: false
+            isPlaying: false,
         };
     }
 
@@ -49,17 +49,25 @@ class Main extends Component
             tagArray = [];
         }
 
+        var checker = (tag, fileName) => {
+            if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n: ${fileName}`); return; }
+            if (tag.tags.title === undefined) { alert(`No given {Title}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
+            if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
+            if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n: ${fileName}`); }
+        }
+
         let fileList = event.target.files;    
         Array.from(fileList).map( (each) => {
             console.log("insertTagInfo->map() has ran");
 
             this.jsmediatags.read(each, {
                 onSuccess: function(tag) {
+                    checker(tag, each.name);
                     tag.tags.file = each;
                     tagArray.push(tag.tags);
                 },
                 onError: function(error) {
-                    console.log(':(', error.type, error.info);
+                    checker(undefined, each.name);
                 }
             });
 
@@ -80,26 +88,26 @@ class Main extends Component
 
         this.audioCards = tagArray.map( (each, i) => {
 
-            console.log(each);
+            if (each.picture === undefined) { each.picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png"; }
 
-            let audioInfo = {
-                title: each.title,
-                artist: each.artist,
-                album: each.album,
-                year: each.year,
-                track: each.track,
-                cover: each.picture,
-                file: each.file
-            };
-
-            let passParams = {
+            let paramsForAudioInfo = {
                 pathname: `/${i}`,
-                searchPhrase: audioInfo.artist + " - " + audioInfo.title
+                audioInfo: {
+                    title: each.title,
+                    artist: each.artist,
+                    album: each.album,
+                    year: each.year,
+                    track: each.track,
+                    cover: each.picture,
+                    file: each.file
+                }
             };
+
+            console.log(paramsForAudioInfo);
 
             return (
-                <div className="container">
-                    <AudioCard key={i} audioInfo={ audioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } link={ passParams }/>
+                <div key={i} className="container">
+                    <AudioCard audioInfoParams={ paramsForAudioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } />
                 </div>
             );
 

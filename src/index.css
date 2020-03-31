@@ -56,12 +56,17 @@ code {
 
 
 
+.App #preloader {
+  height: 82vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .App #YTcontent {
   height:82vh;
   display:block;
   overflow:auto;
 }
-
 .App #YTcontent h5:hover {
   color: #3bc7ff;
   cursor: pointer;
