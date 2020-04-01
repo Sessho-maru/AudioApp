@@ -18,7 +18,7 @@ class Main extends Component
         this.audioSlot = "";
         this.state = {
             isNeedtoReRender: false,
-            isPlaying: false,
+            isPlaying: false
         };
     }
 

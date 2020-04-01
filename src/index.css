@@ -71,3 +71,16 @@ code {
   color: #3bc7ff;
   cursor: pointer;
 }
+
+
+
+.App #imgDiv {
+  height:82vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.App #showImg {
+  max-width: 800px;
+  max-height: 800px;
+}
