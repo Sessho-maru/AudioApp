@@ -4,6 +4,7 @@ import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
 var tagArray = [];
+var numItem = 0;
 
 class Main extends Component
 {
@@ -16,6 +17,7 @@ class Main extends Component
 
         this.timer = "";
         this.audioSlot = "";
+
         this.state = {
             isNeedtoReRender: false,
             isPlaying: false
@@ -56,18 +58,26 @@ class Main extends Component
             if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n: ${fileName}`); }
         }
 
-        let fileList = event.target.files;    
-        Array.from(fileList).map( (each) => {
+        let fileList = event.target.files;
+        tagArray.length = fileList.length;
+
+        Array.from(fileList).map( (each, i) => {
             console.log("insertTagInfo->map() has ran");
 
             this.jsmediatags.read(each, {
                 onSuccess: function(tag) {
                     checker(tag, each.name);
                     tag.tags.file = each;
-                    tagArray.push(tag.tags);
+                    tagArray[i] = tag.tags;
+
+                    numItem = numItem + 1;
+                    console.log(numItem);
                 },
                 onError: function(error) {
                     checker(undefined, each.name);
+
+                    numItem = numItem + 1;
+                    console.log(numItem);
                 }
             });
 
@@ -79,11 +89,12 @@ class Main extends Component
     }
 
     reRenderPage = () => {
-        if (this.state.isNeedtoReRender === false)
+        if (tagArray.length !== numItem)
         {
             console.log("Not Yet!!");
             return;
         }
+
         console.log("====reRenderPage() is going to run!!====");
 
         this.audioCards = tagArray.map( (each, i) => {
@@ -112,6 +123,8 @@ class Main extends Component
             );
 
         });
+
+        numItem = 0;
         
         this.setState({
             isNeedtoReRender: false
@@ -135,7 +148,7 @@ class Main extends Component
             this.reRenderPage();
         }, 500);
 
-        console.log("componentDidUpdate() has ran");
+        console.log("componentDidUpdate() has ran");   
         console.log("this.state.isNeedtoReRender: " + this.state.isNeedtoReRender);
         console.log("this.state.isPlaying: " + this.state.isPlaying);
         console.log("this.tagArray: ", tagArray);

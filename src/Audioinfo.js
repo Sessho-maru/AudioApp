@@ -52,7 +52,7 @@ class AudioInfo extends Component
                 let youTubeJson = JSON.parse(splited[0]);
                 this.contentArray = youTubeJson['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];
 
-                this.contentArray = this.contentArray.filter( (each) => each['videoRenderer'] != undefined );
+                this.contentArray = this.contentArray.filter( (each) => each['videoRenderer'] !== undefined );
                 console.log(this.contentArray);
                 //
 
@@ -70,9 +70,9 @@ class AudioInfo extends Component
                     console.log(i);
         
                     // need to be seperated as a function
-                    if (each['videoRenderer']['badges'] != undefined)
+                    if (each['videoRenderer']['badges'] !== undefined)
                     {
-                        if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label == "LIVE NOW")
+                        if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label === "LIVE NOW")
                         {
                             youtubeInfo.length = "LIVE NOW";
                             console.log(youtubeInfo.length);
@@ -85,7 +85,7 @@ class AudioInfo extends Component
                     }
                     else
                     {
-                        if (each['videoRenderer']['lengthText'] != undefined)
+                        if (each['videoRenderer']['lengthText'] !== undefined)
                         {
                             youtubeInfo.length = each['videoRenderer']['lengthText']['simpleText'];
                             console.log(youtubeInfo.length);
