@@ -5,6 +5,8 @@ import YTInfo from './YTInfo';
 const axios = require('axios');
 const cheerio = require('cheerio');
 
+const OFFSET_INDEX_CONTAIN_YTINITIALDATA = 3;
+
 class AudioInfo extends Component
 {
     constructor()
@@ -21,6 +23,7 @@ class AudioInfo extends Component
 
     componentDidMount()
     {
+        console.log(this.props.location);
         if (this.props.location.audioInfo.title === 'untitled' || this.props.location.audioInfo.artist === "")
         {
             this.preloader = <div id="preloader">
@@ -31,32 +34,38 @@ class AudioInfo extends Component
         }
 
         const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
+        console.log(`search term: ${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`);
         const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
         let chunk = [];
 
         axios.get(corsAnywhere + dist)
             .then( (res) => {
+                /* console.log(res.data); */
 
-                // need to be seperated as a function
+        // need to be seperated as a function
                 let $ = cheerio.load(res.data);
+
                 $('script').each( (i, element) => {
                     chunk.push($(element));
                 });
 
                 let length = chunk.length;
-                const rawString = $(chunk[length - 2]).contents()[0].data;
+                const rawString = $(chunk[length - OFFSET_INDEX_CONTAIN_YTINITIALDATA]).contents()[0].data;
+                /* console.log(rawString); */
 
                 let splited = rawString.split("window[\"ytInitialData\"] = ");
                 splited = splited[1].split(";\n");
+                /* console.log(splited); */
 
                 let youTubeJson = JSON.parse(splited[0]);
                 this.contentArray = youTubeJson['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];
+                /* console.log(contentArray); */
 
                 this.contentArray = this.contentArray.filter( (each) => each['videoRenderer'] !== undefined );
-                console.log(this.contentArray);
-                //
+                /* console.log(this.contentArray); */
+        //
 
-                // need to be seperated as a function
+        // need to be seperated as a function
                 this.YTInfos = this.contentArray.map( (each, i) => {
 
                     let youtubeInfo = {
@@ -69,7 +78,7 @@ class AudioInfo extends Component
 
                     console.log(i);
         
-                    // need to be seperated as a function
+            // need to be seperated as a function
                     if (each['videoRenderer']['badges'] !== undefined)
                     {
                         if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label === "LIVE NOW")
@@ -96,8 +105,8 @@ class AudioInfo extends Component
                             console.log(youtubeInfo.length);
                         }
                     }
-                    //
-        
+            //
+        //
                     youtubeInfo.videoId = each['videoRenderer'].videoId;
                     youtubeInfo.thumbnailUrl = each['videoRenderer']['thumbnail']['thumbnails'][0].url;
                     youtubeInfo.title = each['videoRenderer']['title']['runs'][0].text;
@@ -106,8 +115,6 @@ class AudioInfo extends Component
                     return (
                         <YTInfo key={i} YTInfoObj={youtubeInfo} />
                     );
-                //
-
                 });
 
                 console.log("Packed Component into Array", this.YTInfos);
@@ -117,12 +124,10 @@ class AudioInfo extends Component
             .catch( (err) => {
                 console.log("something goes wrong");
             });
-
     }
 
     render()
     {
-        console.log(this.props.location);
         if (this.state.isntFetchable === false)
         {
             this.preloader = <div id="preloader">
@@ -140,14 +145,13 @@ class AudioInfo extends Component
                                     </div>
                                 </div>
                              </div>
-        }
-        
+        }        
 
         return (
             <div className="row">
                 <div className="container">
                     <div className="col s7">
-                        <TagInfo tagInfo={ this.props.location.audioInfo }/>
+                        <TagInfo albumArt={ this.props.location.albumArtUrl }/>
                     </div>
                     <div className="col s5">
                         <div id="YTcontent">

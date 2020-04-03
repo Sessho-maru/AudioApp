@@ -9,30 +9,12 @@ function AudioCard(props)
         props.changePlayState();
     }
 
-    let albumArtUrl = "";
-    console.log(props.audioInfoParams);
-
-    if (typeof(props.audioInfoParams.audioInfo.cover) === "string")
-    {
-        albumArtUrl = props.audioInfoParams.audioInfo.cover;
-        props.audioInfoParams.audioInfo.cover = albumArtUrl;
-    }
-    else
-    {
-        const { data, type } = props.audioInfoParams.audioInfo.cover;
-        const byteArray = new Uint8Array(data);
-        const blob = new Blob([byteArray], { type });
-        albumArtUrl = URL.createObjectURL(blob);
-        
-        props.audioInfoParams.audioInfo.cover = albumArtUrl;
-    }
-
     return (
         <div className="col s2">
             <div className="card hoverable small">
                 <Link to={ props.audioInfoParams }>
                     <div className="card-image">
-                        <img src={albumArtUrl} />
+                        <img src={props.audioInfoParams.albumArtUrl} />
                     </div>
                     <div className="card-content">
                         <p>{props.audioInfoParams.audioInfo.title}</p>

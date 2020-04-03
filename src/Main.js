@@ -51,7 +51,7 @@ class Main extends Component
             tagArray = [];
         }
 
-        var checker = (tag, fileName) => {
+        let checker = (tag, fileName) => {
             if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n: ${fileName}`); return; }
             if (tag.tags.title === undefined) { alert(`No given {Title}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
             if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
@@ -59,16 +59,16 @@ class Main extends Component
         }
 
         let fileList = event.target.files;
-        tagArray.length = fileList.length;
+        tagArray.length = numItem + fileList.length;
 
-        Array.from(fileList).map( (each, i) => {
+        Array.from(fileList).map( (each) => {
             console.log("insertTagInfo->map() has ran");
 
             this.jsmediatags.read(each, {
                 onSuccess: function(tag) {
                     checker(tag, each.name);
                     tag.tags.file = each;
-                    tagArray[i] = tag.tags;
+                    tagArray[numItem] = tag.tags;
 
                     numItem = numItem + 1;
                     console.log(numItem);
@@ -89,17 +89,9 @@ class Main extends Component
     }
 
     reRenderPage = () => {
-        if (tagArray.length !== numItem)
-        {
-            console.log("Not Yet!!");
-            return;
-        }
-
         console.log("====reRenderPage() is going to run!!====");
 
         this.audioCards = tagArray.map( (each, i) => {
-
-            if (each.picture === undefined) { each.picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png"; }
 
             let paramsForAudioInfo = {
                 pathname: `/${i}`,
@@ -109,10 +101,25 @@ class Main extends Component
                     album: each.album,
                     year: each.year,
                     track: each.track,
-                    cover: each.picture,
+                    coverData: each.picture,
                     file: each.file
-                }
+                },
+                isHaveArt: true,
+                albumArtUrl: ""
             };
+
+            if (paramsForAudioInfo.audioInfo.coverData === undefined) 
+            {
+                paramsForAudioInfo.isHaveArt = false;
+                paramsForAudioInfo.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
+            }
+            else
+            {
+                const { data, type } = paramsForAudioInfo.audioInfo.coverData;
+                const byteArray = new Uint8Array(data);
+                const blob = new Blob([byteArray], { type });
+                paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
+            }
 
             console.log(paramsForAudioInfo);
 
@@ -124,8 +131,6 @@ class Main extends Component
 
         });
 
-        numItem = 0;
-        
         this.setState({
             isNeedtoReRender: false
         });
@@ -145,13 +150,17 @@ class Main extends Component
     {
         clearInterval(this.timer);
         this.timer = setInterval( () =>{
-            this.reRenderPage();
+            if (numItem === tagArray.length && this.state.isNeedtoReRender === true)
+            {
+                this.reRenderPage();
+            }
         }, 500);
 
         console.log("componentDidUpdate() has ran");   
         console.log("this.state.isNeedtoReRender: " + this.state.isNeedtoReRender);
         console.log("this.state.isPlaying: " + this.state.isPlaying);
         console.log("this.tagArray: ", tagArray);
+        console.log(`numItem: ${numItem}, tagArray.length: ${tagArray.length}`);
     }
 
     componentWillUnmount()
