@@ -4,31 +4,64 @@ import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
 var tagArray = [];
-var numItem = 0;
+var processedItemNum = 0;
 
 class Main extends Component
 {
     constructor()
     {
         super();
-
         this.jsmediatags = require('jsmediatags');
+
         this.audioCards = [];
+        // this.durations = [];
 
         this.timer = "";
         this.audioSlot = "";
+        this.playSymbol = "drag_handle";
 
         this.state = {
             isNeedtoReRender: false,
-            isPlaying: false
+            isPlaying: false,
+            nowPlayingIndex: ""
         };
     }
 
-    changePlayState = () => {
-        console.log("State has been changed");
-        this.setState({
-            isPlaying: true
-        });
+    _pause = () =>{
+        console.log("PAUSE");
+        this.audioSlot.pause();
+    }
+
+    changePlayState = (songIndex) => {
+        console.log("State is going to be change");
+        console.log(`CUR: ${this.state.nowPlayingIndex}, NEXT: ${songIndex}`);
+        
+        if (this.state.nowPlayingIndex !== songIndex)
+        {
+            this.playSymbol = "pause";
+
+            if (this.state.nowPlayingIndex === "")
+            {
+                this.setState({
+                    isPlaying: true,
+                    nowPlayingIndex: songIndex
+                });
+            }
+
+            this.setState({
+                nowPlayingIndex: songIndex
+            });
+        }
+        else
+        {
+            this.playSymbol = "play_arrow";
+            this._pause();
+
+            this.setState({
+                isPlaying: false,
+                nowPlayingIndex: ""
+            });
+        }
     }
 
     openFileDialog = (mode) => {
@@ -52,14 +85,14 @@ class Main extends Component
         }
 
         let checker = (tag, fileName) => {
-            if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n: ${fileName}`); return; }
-            if (tag.tags.title === undefined) { alert(`No given {Title}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
-            if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n: ${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
-            if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n: ${fileName}`); }
+            if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n:${fileName}`); return; }
+            if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
+            if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
+            if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n:${fileName}`); }
         }
 
         let fileList = event.target.files;
-        tagArray.length = numItem + fileList.length;
+        tagArray.length = processedItemNum + fileList.length;
 
         Array.from(fileList).map( (each) => {
             console.log("insertTagInfo->map() has ran");
@@ -68,16 +101,12 @@ class Main extends Component
                 onSuccess: function(tag) {
                     checker(tag, each.name);
                     tag.tags.file = each;
-                    tagArray[numItem] = tag.tags;
-
-                    numItem = numItem + 1;
-                    console.log(numItem);
+                    tagArray[processedItemNum] = tag.tags;
+                    processedItemNum = processedItemNum + 1;
                 },
                 onError: function(error) {
                     checker(undefined, each.name);
-
-                    numItem = numItem + 1;
-                    console.log(numItem);
+                    processedItemNum = processedItemNum + 1;
                 }
             });
 
@@ -89,7 +118,7 @@ class Main extends Component
     }
 
     reRenderPage = () => {
-        console.log("====reRenderPage() is going to run!!====");
+        console.log("reRenderPage() is going to run!!");
 
         this.audioCards = tagArray.map( (each, i) => {
 
@@ -121,8 +150,6 @@ class Main extends Component
                 paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
             }
 
-            console.log(paramsForAudioInfo);
-
             return (
                 <div key={i} className="container">
                     <AudioCard audioInfoParams={ paramsForAudioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } />
@@ -150,17 +177,30 @@ class Main extends Component
     {
         clearInterval(this.timer);
         this.timer = setInterval( () =>{
-            if (numItem === tagArray.length && this.state.isNeedtoReRender === true)
+            if (processedItemNum === tagArray.length && this.state.isNeedtoReRender === true)
             {
                 this.reRenderPage();
             }
         }, 500);
 
-        console.log("componentDidUpdate() has ran");   
+        console.log("componentDidUpdate() has ran");
         console.log("this.state.isNeedtoReRender: " + this.state.isNeedtoReRender);
         console.log("this.state.isPlaying: " + this.state.isPlaying);
+        console.log("this.state.nowPlayingIndex: " + this.state.nowPlayingIndex);
         console.log("this.tagArray: ", tagArray);
-        console.log(`numItem: ${numItem}, tagArray.length: ${tagArray.length}`);
+        console.log(`processedItemNum: ${processedItemNum}, tagArray.length: ${tagArray.length}`);
+        console.log("============================");
+
+        // let reader = new FileReader();
+        // tagArray.map( (each) => {
+        //     reader.readAsArrayBuffer(each.file);
+        //     reader.onload = (readEvent) => {
+        //         var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        //         audioContext.decodeAudioData(readEvent.target.result, function(buffer) {
+        //             console.log(buffer.duration);
+        //         });
+        //     }
+        // });
     }
 
     componentWillUnmount()
@@ -171,7 +211,6 @@ class Main extends Component
     render()
     {
         console.log("render() has ran");
-        let playIcon = this.state.isPlaying === true ? "pause" : "drag_handle";
         
         return (
             <div className="row">
@@ -198,8 +237,7 @@ class Main extends Component
                 </div>
   
                 <div id="now_playing" className="col s10">
-                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{playIcon}</i></a>
-                    <audio id="sound" autoPlay hidden></audio>
+                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{this.playSymbol}</i></a>
                 </div>
   
                 <div id="content" className="col s10">
@@ -209,10 +247,11 @@ class Main extends Component
                     </Router>
                 </div>
 
+                <audio id="sound" autoPlay hidden></audio>
                 <input type="file" id="new" onChange={ (event) => {this.insertTagInfo(event, true)} } multiple hidden/>
                 <input type="file" id="append" onChange={ (event) => {this.insertTagInfo(event, false)} } multiple hidden/>
             </div>
-        );  
+        );
     }
 }
 

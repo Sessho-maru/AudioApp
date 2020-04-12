@@ -15,6 +15,7 @@ class AudioInfo extends Component
         this.contentArray = [];
         this.YTInfos = [];
         this.preloader = "";
+        
         this.state = { 
             isntFetchable: false, 
             isLoaded: false 
@@ -38,11 +39,12 @@ class AudioInfo extends Component
         const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
         let chunk = [];
 
+        // 1. Send axios request to Youtube
         axios.get(corsAnywhere + dist)
             .then( (res) => {
                 /* console.log(res.data); */
 
-        // need to be seperated as a function
+        // 2. Receive a Raw string data from axios.res object
                 let $ = cheerio.load(res.data);
 
                 $('script').each( (i, element) => {
@@ -53,6 +55,7 @@ class AudioInfo extends Component
                 const rawString = $(chunk[length - OFFSET_INDEX_CONTAIN_YTINITIALDATA]).contents()[0].data;
                 /* console.log(rawString); */
 
+        // 3. Find the Object that has youtube.videoRenderer Object
                 let splited = rawString.split("window[\"ytInitialData\"] = ");
                 splited = splited[1].split(";\n");
                 /* console.log(splited); */
@@ -61,11 +64,11 @@ class AudioInfo extends Component
                 this.contentArray = youTubeJson['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];
                 /* console.log(contentArray); */
 
+        // 4. Filter Obejects doesn't have youtube.videoRenderer Object inside
                 this.contentArray = this.contentArray.filter( (each) => each['videoRenderer'] !== undefined );
                 /* console.log(this.contentArray); */
-        //
 
-        // need to be seperated as a function
+        // 5. Convert each youtube.videoRenderer Object into this.YTInfos to render
                 this.YTInfos = this.contentArray.map( (each, i) => {
 
                     let youtubeInfo = {
@@ -76,20 +79,16 @@ class AudioInfo extends Component
                         length: ""
                     };
 
-                    console.log(i);
-        
-            // need to be seperated as a function
+            // Check Video length, because some video doesn't have length data and it causes a error
                     if (each['videoRenderer']['badges'] !== undefined)
                     {
                         if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label === "LIVE NOW")
                         {
                             youtubeInfo.length = "LIVE NOW";
-                            console.log(youtubeInfo.length);
                         }
                         else
                         {
                             youtubeInfo.length = each['videoRenderer']['lengthText']['simpleText'];
-                            console.log(youtubeInfo.length);
                         }
                     }
                     else
@@ -97,16 +96,14 @@ class AudioInfo extends Component
                         if (each['videoRenderer']['lengthText'] !== undefined)
                         {
                             youtubeInfo.length = each['videoRenderer']['lengthText']['simpleText'];
-                            console.log(youtubeInfo.length);
                         }
                         else
                         {
                             youtubeInfo.length = "LIVE NOW";
-                            console.log(youtubeInfo.length);
                         }
                     }
-            //
-        //
+                    console.log(`${i}, ${youtubeInfo.length}`);
+
                     youtubeInfo.videoId = each['videoRenderer'].videoId;
                     youtubeInfo.thumbnailUrl = each['videoRenderer']['thumbnail']['thumbnails'][0].url;
                     youtubeInfo.title = each['videoRenderer']['title']['runs'][0].text;
