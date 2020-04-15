@@ -14,16 +14,14 @@ class Main extends Component
         this.jsmediatags = require('jsmediatags');
 
         this.audioCards = [];
-        // this.durations = [];
-
-        this.timer = "";
+        this.timeoutId = "";
         this.audioSlot = "";
-        this.playSymbol = "drag_handle";
+        this.playButtonSymbol = "drag_handle";
+        this.CUE_CUR = "";
 
         this.state = {
-            isNeedtoReRender: false,
+            isNeedToReRender: false,
             isPlaying: false,
-            nowPlayingIndex: ""
         };
     }
 
@@ -32,56 +30,85 @@ class Main extends Component
         this.audioSlot.pause();
     }
 
-    changePlayState = (songIndex) => {
+    changePlayState = (CUE_NEXT) => {
         console.log("State is going to be change");
-        console.log(`CUR: ${this.state.nowPlayingIndex}, NEXT: ${songIndex}`);
+        console.log(`CUE_CUR: ${this.CUE_CUR}, CUE_NEXT: ${CUE_NEXT}`);
         
-        if (this.state.nowPlayingIndex !== songIndex)
+        if (this.CUE_CUR !== CUE_NEXT)
         {
-            this.playSymbol = "pause";
+            this.playButtonSymbol = "pause";
 
-            if (this.state.nowPlayingIndex === "")
+            clearTimeout(this.timeoutId);
+            this.timeoutId = setTimeout( () => {
+                let after = document.getElementById(`${parseInt(CUE_NEXT) + 1}`);
+                if (after !== null) { after.click(); }
+            }, (tagArray[CUE_NEXT].duration) * 1000);
+
+            if (this.CUE_CUR === "")
             {
+                document.getElementById(`${CUE_NEXT}`).innerHTML = "stop";
+                document.getElementById(`${CUE_NEXT}_selected`).classList.add("indigo");
+                this.CUE_CUR = CUE_NEXT;
                 this.setState({
                     isPlaying: true,
-                    nowPlayingIndex: songIndex
+                    isNeedToReRender: true
                 });
+                return;
             }
 
+            document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
+            document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
+
+            document.getElementById(`${CUE_NEXT}`).innerHTML = "stop";
+            document.getElementById(`${CUE_NEXT}_selected`).classList.add("indigo");
+
+            this.CUE_CUR = CUE_NEXT;
             this.setState({
-                nowPlayingIndex: songIndex
+                isNeedToReRender: true
             });
         }
         else
         {
-            this.playSymbol = "play_arrow";
+            this.playButtonSymbol = "play_arrow";
+            clearTimeout(this.timeoutId);
             this._pause();
 
+            document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
+            document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
+            this.CUE_CUR = "";
             this.setState({
                 isPlaying: false,
-                nowPlayingIndex: ""
+                isNeedToReRender: true
             });
         }
     }
 
-    openFileDialog = (mode) => {
-        if (mode === true)
+    openFileDialog = (clearTagArray) => {
+        if (clearTagArray === true)
         {
             let newFileDialog = document.getElementById('new');
             newFileDialog.click();
         }
 
-        if(mode === false)
+        if(clearTagArray === false)
         {
             let appendFileDialog = document.getElementById('append');
             appendFileDialog.click();
         }
     }
     
-    insertTagInfo = (event, mode) => {
-        if (mode === true)
+    insertTagInfo = (event, initializing) => {
+        if (initializing === true)
         {
-            tagArray = [];
+            if (this.CUE_CUR !== "")
+            {
+                document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
+                document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
+
+                tagArray = [];
+                processedItemNum = 0;
+                this.CUE_CUR = "";
+            }
         }
 
         let checker = (tag, fileName) => {
@@ -89,6 +116,26 @@ class Main extends Component
             if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
             if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
             if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n:${fileName}`); }
+        }
+
+        let getDuration = (file, index) => {
+            let fr = new FileReader();
+            fr.readAsArrayBuffer(file);
+            fr.onload = (readEvent) => {
+                var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioContext.decodeAudioData(readEvent.target.result, (buffer) => {
+                    tagArray[index].duration = buffer.duration;
+                    console.log(`duration: ${buffer.duration} of ${index} is inserted`);
+                    
+                });
+            };
+        }
+
+        let triggerRerender = () => {
+            this.reRenderPage();
+            this.setState({
+                isNeedtoReRender: true
+            });
         }
 
         let fileList = event.target.files;
@@ -99,21 +146,23 @@ class Main extends Component
 
             this.jsmediatags.read(each, {
                 onSuccess: function(tag) {
+                    console.log("jsmediaTags.read() has been run");
+                    
                     checker(tag, each.name);
                     tag.tags.file = each;
                     tagArray[processedItemNum] = tag.tags;
+                    getDuration(each, processedItemNum);
+
                     processedItemNum = processedItemNum + 1;
+                    if (processedItemNum === tagArray.length) { triggerRerender(); }
                 },
                 onError: function(error) {
+                    console.log("jsmediaTags.read() has been run, but failed");
                     checker(undefined, each.name);
                     processedItemNum = processedItemNum + 1;
                 }
             });
 
-        });
-
-        this.setState({
-            isNeedtoReRender: true
         });
     }
 
@@ -134,7 +183,8 @@ class Main extends Component
                     file: each.file
                 },
                 isHaveArt: true,
-                albumArtUrl: ""
+                albumArtUrl: "",
+                index: i
             };
 
             if (paramsForAudioInfo.audioInfo.coverData === undefined) 
@@ -157,10 +207,6 @@ class Main extends Component
             );
 
         });
-
-        this.setState({
-            isNeedtoReRender: false
-        });
     }
     
     componentDidMount()
@@ -175,37 +221,17 @@ class Main extends Component
 
     componentDidUpdate()
     {
-        clearInterval(this.timer);
-        this.timer = setInterval( () =>{
-            if (processedItemNum === tagArray.length && this.state.isNeedtoReRender === true)
-            {
-                this.reRenderPage();
-            }
-        }, 500);
-
         console.log("componentDidUpdate() has ran");
-        console.log("this.state.isNeedtoReRender: " + this.state.isNeedtoReRender);
         console.log("this.state.isPlaying: " + this.state.isPlaying);
-        console.log("this.state.nowPlayingIndex: " + this.state.nowPlayingIndex);
-        console.log("this.tagArray: ", tagArray);
+        console.log("this.CUE_CUR: " + this.CUE_CUR);
         console.log(`processedItemNum: ${processedItemNum}, tagArray.length: ${tagArray.length}`);
+        console.log("tagArray: ", tagArray);
         console.log("============================");
-
-        // let reader = new FileReader();
-        // tagArray.map( (each) => {
-        //     reader.readAsArrayBuffer(each.file);
-        //     reader.onload = (readEvent) => {
-        //         var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        //         audioContext.decodeAudioData(readEvent.target.result, function(buffer) {
-        //             console.log(buffer.duration);
-        //         });
-        //     }
-        // });
     }
 
     componentWillUnmount()
     {
-        clearInterval(this.timer);
+        clearTimeout(this.timeoutId);
     }
 
     render()
@@ -214,7 +240,7 @@ class Main extends Component
         
         return (
             <div className="row">
-                <div className="col s2">
+                <div id="nav" className="col s2">
                     <h1>Navbar</h1>
                     <h1>Here</h1>
                     <h1>Navbar</h1>
@@ -224,7 +250,6 @@ class Main extends Component
     
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
-
                         <ul>
                             <li>
                                 <a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><i className="material-icons">playlist_add</i></a>
@@ -233,11 +258,15 @@ class Main extends Component
                                 <a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><i className="material-icons">queue</i></a>
                             </li>
                         </ul>
-                     </div>
+                    </div>
                 </div>
   
                 <div id="now_playing" className="col s10">
-                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{this.playSymbol}</i></a>
+                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{this.playButtonSymbol}</i></a>
+                    <div id="now_playing_tag">
+                        <p id="album">{this.CUE_CUR === "" ? "- - -" : tagArray[this.CUE_CUR].album}</p>
+                        <p id="artist_title">{this.CUE_CUR === "" ? "- - -" : `${tagArray[this.CUE_CUR].artist} - ${tagArray[this.CUE_CUR].title}`}</p>
+                    </div>
                 </div>
   
                 <div id="content" className="col s10">

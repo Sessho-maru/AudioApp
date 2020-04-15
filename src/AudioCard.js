@@ -1,48 +1,40 @@
-import React, {Component} from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 
-class AudioCard extends Component
-{
-    constructor()
-    {
-        super();
+let nowPlaying = "";
 
-        this.state = {
-            isClicked: false
-        };
-    }
-
-    _play = (event) => {
+function AudioCard(props)
+{ 
+    let _play = (event) => {
         event.preventDefault();
-        this.props.audioSlot.src = URL.createObjectURL(this.props.audioInfoParams.audioInfo.file);
-        this.props.changePlayState(event.target.id);
-
-        console.log("PLAY");
-        this.setState( (prevState) => ({
-            isClicked: !prevState.isClicked
-        }));
+        props.audioSlot.src = URL.createObjectURL(props.audioInfoParams.audioInfo.file);
+        props.changePlayState(event.target.id);
+        nowPlaying = parseInt(event.target.id);
     }
 
-    render()
-    {
-        return (
-            <div className="col s2">
-                <div className="card hoverable small">
-                    <Link to={ this.props.audioInfoParams }>
-                        <div className="card-image">
-                            <img src={this.props.audioInfoParams.albumArtUrl} />
-                        </div>
-                        <div className="card-content">
-                            <p>{this.props.audioInfoParams.audioInfo.title}</p>
-                        </div>
-                    </Link>
-                    <div className="card-action">
-                        <a id={this.props.audioInfoParams.pathname} href="#" onClick={ (event) => { this._play(event) } }>{ this.state.isClicked ? "pause" : "play" }</a>
+    let text = <a id={ props.audioInfoParams.index } href="#" onClick={ (event) => { _play(event) } }>{nowPlaying === props.audioInfoParams.index ? 'stop' : 'play'}</a>;
+    let bar = <div className="progress"><div className="indeterminate"></div></div>;
+
+    return (
+        <div className="col s2">
+            <div className="card hoverable small">
+                <Link to={ props.audioInfoParams }>
+                    <div className="card-image">
+                        <img src={ props.audioInfoParams.albumArtUrl } />
                     </div>
-                </div>
-            </div>            
-        );
-    }
+                    <div className="card-content">
+                        <p>{ props.audioInfoParams.audioInfo.title }</p>
+                    </div>
+                </Link>
+                    <div id={ `${props.audioInfoParams.index}_selected` } className={"card-action " + (nowPlaying === props.audioInfoParams.index ? 'indigo' : '')}>
+                        {props.audioInfoParams.index === 1 ? text : bar}
+                            
+                        {/* <a id={ props.audioInfoParams.index } href="#" onClick={ (event) => { _play(event) } }>{nowPlaying === props.audioInfoParams.index ? 'stop' : 'play'}</a> */}
+                        {/* <div className="progress"><div className="indeterminate"></div></div> */}
+                    </div>
+            </div>
+        </div>
+    );
 }
 
 export default AudioCard;

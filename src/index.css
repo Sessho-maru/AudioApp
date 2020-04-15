@@ -47,23 +47,44 @@ code {
   height:13vh;
   display: flex;
   align-items: center;
+
+  border-style: none none solid none;
+  border-width: 1px;
+  border-color: #f4511c;
 }
+.App #play_button {
+  margin-left: 15px; 
+}
+.App #now_playing_tag {
+  display: block;
+  margin-left: 30px;
+}
+.App #album {
+
+}
+.App #artist_title {
+
+}
+
+
+
 .App #content {
   height:87vh;
   display:block;
   overflow:auto;
+  margin-top: 10px;
 }
 
 
 
 .App #preloader {
-  height: 82vh;
+  height: 83vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .App #YTcontent {
-  height:82vh;
+  height: 85vh;
   display:block;
   overflow:auto;
 }
@@ -83,4 +104,14 @@ code {
 .App #showImg {
   max-width: 800px;
   max-height: 800px;
+}
+
+
+
+.App #nav {
+  height: 100vh;
+  border-style: none solid none none;
+  border-width: 2px;
+  border-color: #f4511c;
+  background-color:#e8eaf6;
 }

@@ -15,7 +15,7 @@ class AudioInfo extends Component
         this.contentArray = [];
         this.YTInfos = [];
         this.preloader = "";
-        
+
         this.state = { 
             isntFetchable: false, 
             isLoaded: false 
@@ -64,11 +64,11 @@ class AudioInfo extends Component
                 this.contentArray = youTubeJson['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];
                 /* console.log(contentArray); */
 
-        // 4. Filter Obejects doesn't have youtube.videoRenderer Object inside
+        // 4. Filter the objects doesn't have youtube.videoRenderer Object inside
                 this.contentArray = this.contentArray.filter( (each) => each['videoRenderer'] !== undefined );
                 /* console.log(this.contentArray); */
 
-        // 5. Convert each youtube.videoRenderer Object into this.YTInfos to render
+        // 5. Convert each youtube.videoRenderer Object into YTInfos Component Array to render
                 this.YTInfos = this.contentArray.map( (each, i) => {
 
                     let youtubeInfo = {
@@ -79,7 +79,7 @@ class AudioInfo extends Component
                         length: ""
                     };
 
-            // Check Video length, because some video doesn't have length data and it causes a error
+            // Check Video length, because some video doesn't have length data and it causes an error
                     if (each['videoRenderer']['badges'] !== undefined)
                     {
                         if (each['videoRenderer']['badges'][0]['metadataBadgeRenderer'].label === "LIVE NOW")
@@ -114,7 +114,7 @@ class AudioInfo extends Component
                     );
                 });
 
-                console.log("Packed Component into Array", this.YTInfos);
+                console.log("Packed Component Array", this.YTInfos);
                 this.setState({ isLoaded: true });
 
             })
