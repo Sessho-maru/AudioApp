@@ -4,7 +4,6 @@ import YTInfo from './YTInfo';
 
 const axios = require('axios');
 const cheerio = require('cheerio');
-
 const OFFSET_INDEX_CONTAIN_YTINITIALDATA = 3;
 
 class AudioInfo extends Component

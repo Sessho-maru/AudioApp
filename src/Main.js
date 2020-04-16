@@ -17,8 +17,11 @@ class Main extends Component
         this.audioCards = [];
         this.timeoutId = "";
         this.audioSlot = "";
-        this.playButtonSymbol = "drag_handle"; // the first render State
-        this.CUE_CUR = "";
+        this.playButtonSymbol = "drag_handle";
+        this.CUE = {
+            CUR: "",
+            NEXT: ""
+        };
 
         this.state = {
             isNeedToReRender: false,
@@ -26,31 +29,43 @@ class Main extends Component
         };
     }
 
-    _pause = () =>{
+    _pause = () => {
         console.log("PAUSE");
         this.audioSlot.pause();
     }
 
-    changePlayState = (CUE_NEXT) => {
+    _play = () => {
+        this.audioSlot.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
+        this.changePlayState();
+    }
+
+    changePlayState = () => {
         console.log("State is going to be change");
-        console.log(`CUE_CUR: ${this.CUE_CUR}, CUE_NEXT: ${CUE_NEXT}`);
+        console.log(`Now: ${this.CUE.CUR}, and Next is: ${this.CUE.NEXT}`);
+
+        let setNext = () => {
+            clearTimeout(this.timeoutId);
+            this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
+            this.timeoutId = setTimeout( () => {
+                if (parseInt(this.CUE.NEXT) === tagArray.length) {
+                    this.CUE.NEXT = this.CUE.CUR;
+                    this.changePlayState();
+                }
+                else {
+                    this._play();
+                }
+            }, (tagArray[this.CUE.CUR].duration) * 1000 );
+        }
         
-        if (this.CUE_CUR !== CUE_NEXT)
+        if (this.CUE.CUR !== this.CUE.NEXT)
         {
             this.playButtonSymbol = "pause";
-
-            clearTimeout(this.timeoutId);
-            this.timeoutId = setTimeout( () => {
-                let after = document.getElementById(`${parseInt(CUE_NEXT) + 1}`);
-                if (after !== null) { after.click(); }
-                else { this.changePlayState(this.CUE_CUR); }
-            }, (tagArray[CUE_NEXT].duration) * 1000 );
-
-            if (this.CUE_CUR === "")
+            if (this.CUE.CUR === "")
             {
-                document.getElementById(`${CUE_NEXT}`).innerHTML = "stop";
-                document.getElementById(`${CUE_NEXT}_selected`).classList.add("indigo");
-                this.CUE_CUR = CUE_NEXT;
+                document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
+                document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
+                this.CUE.CUR = this.CUE.NEXT;
+                setNext();
                 this.setState({
                     isPlaying: true,
                     isNeedToReRender: true
@@ -58,13 +73,12 @@ class Main extends Component
                 return;
             }
 
-            document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
-            document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
-
-            document.getElementById(`${CUE_NEXT}`).innerHTML = "stop";
-            document.getElementById(`${CUE_NEXT}_selected`).classList.add("indigo");
-
-            this.CUE_CUR = CUE_NEXT;
+            document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
+            document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+            document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
+            document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
+            this.CUE.CUR = this.CUE.NEXT;
+            setNext();
             this.setState({
                 isNeedToReRender: true
             });
@@ -75,9 +89,10 @@ class Main extends Component
             clearTimeout(this.timeoutId);
             this._pause();
 
-            document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
-            document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
-            this.CUE_CUR = "";
+            document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
+            document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+            this.CUE.CUR = "";
+            this.CUE.NEXT = "";
             this.setState({
                 isPlaying: false,
                 isNeedToReRender: true
@@ -107,7 +122,8 @@ class Main extends Component
 
             numProcessedItem = 0;
             numDurationsReceived = 0;
-            this.CUE_CUR = "";
+            this.CUE.CUR = "";
+            this.CUE.NEXT = "";
         }
 
         let checker = (tag, fileName) => {
@@ -130,10 +146,9 @@ class Main extends Component
                                                     { React.cloneElement(this.audioCards[index].props.children, { isDone: true }) }
                                                 </div>
                     numDurationsReceived = numDurationsReceived + 1;
-
                     if (numDurationsReceived === tagArray.length)
                     {
-                        console.log("setState");
+                        console.log("processing was completed");
                         this.setState({
                             isNeedToReRender: true
                         });
@@ -202,7 +217,6 @@ class Main extends Component
                     year: tagArray[startingIndex].year,
                     track: tagArray[startingIndex].track,
                     coverData: tagArray[startingIndex].picture,
-                    file: tagArray[startingIndex].file
                 },
                 isHaveArt: true,
                 albumArtUrl: "",
@@ -223,7 +237,7 @@ class Main extends Component
             }
 
             this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
-                                                    <AudioCard audioInfoParams={ paramsForAudioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } />
+                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._play }/>
                                                 </div>
             startingIndex = startingIndex + 1;
         }
@@ -232,12 +246,10 @@ class Main extends Component
     componentDidMount()
     {
         this.audioSlot = document.getElementById('sound');
-
         var elems = document.querySelectorAll('.fixed-action-btn');
         var instances = window.M.FloatingActionButton.init(elems, {
             direction: 'top'
         });
-
         this.playButtonSymbol = "play_arrow";
     }
 
@@ -245,8 +257,9 @@ class Main extends Component
     {
         console.log("componentDidUpdate() has ran");
         console.log("this.state.isPlaying: " + this.state.isPlaying);
-        console.log("this.CUE_CUR: " + this.CUE_CUR);
+        console.log("nowPlaying: " + this.CUE.CUR);
         console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
+        console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
         console.log("tagArray: ", tagArray);
         console.log("============================");
     }
@@ -286,8 +299,8 @@ class Main extends Component
                 <div id="now_playing" className="col s10">
                     <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{this.playButtonSymbol}</i></a>
                     <div id="now_playing_tag">
-                        <p id="album">{this.CUE_CUR === "" ? "- - -" : tagArray[this.CUE_CUR].album}</p>
-                        <p id="artist_title">{this.CUE_CUR === "" ? "- - -" : `${tagArray[this.CUE_CUR].artist} - ${tagArray[this.CUE_CUR].title}`}</p>
+                        <p id="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</p>
+                        <p id="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</p>
                     </div>
                 </div>
   
