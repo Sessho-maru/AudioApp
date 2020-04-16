@@ -4,7 +4,8 @@ import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
 var tagArray = [];
-var processedItemNum = 0;
+var numProcessedItem = 0;
+var numDurationsReceived = 0;
 
 class Main extends Component
 {
@@ -16,7 +17,7 @@ class Main extends Component
         this.audioCards = [];
         this.timeoutId = "";
         this.audioSlot = "";
-        this.playButtonSymbol = "drag_handle";
+        this.playButtonSymbol = "drag_handle"; // the first render State
         this.CUE_CUR = "";
 
         this.state = {
@@ -42,7 +43,8 @@ class Main extends Component
             this.timeoutId = setTimeout( () => {
                 let after = document.getElementById(`${parseInt(CUE_NEXT) + 1}`);
                 if (after !== null) { after.click(); }
-            }, (tagArray[CUE_NEXT].duration) * 1000);
+                else { this.changePlayState(this.CUE_CUR); }
+            }, (tagArray[CUE_NEXT].duration) * 1000 );
 
             if (this.CUE_CUR === "")
             {
@@ -90,7 +92,7 @@ class Main extends Component
             newFileDialog.click();
         }
 
-        if(clearTagArray === false)
+        if (clearTagArray === false)
         {
             let appendFileDialog = document.getElementById('append');
             appendFileDialog.click();
@@ -100,22 +102,19 @@ class Main extends Component
     insertTagInfo = (event, initializing) => {
         if (initializing === true)
         {
-            if (this.CUE_CUR !== "")
-            {
-                document.getElementById(`${this.CUE_CUR}`).innerHTML = "play";
-                document.getElementById(`${this.CUE_CUR}_selected`).classList.remove("indigo");
+            tagArray = [];
+            this.audioCards = [];
 
-                tagArray = [];
-                processedItemNum = 0;
-                this.CUE_CUR = "";
-            }
+            numProcessedItem = 0;
+            numDurationsReceived = 0;
+            this.CUE_CUR = "";
         }
 
         let checker = (tag, fileName) => {
             if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n:${fileName}`); return; }
             if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
             if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
-            if (tag.tags.picture === undefined) { alert(`No given Album Cover data!\n:${fileName}`); }
+            if (tag.tags.picture === undefined) { alert(`No given Albumart data!\n:${fileName}`); }
         }
 
         let getDuration = (file, index) => {
@@ -126,20 +125,33 @@ class Main extends Component
                 audioContext.decodeAudioData(readEvent.target.result, (buffer) => {
                     tagArray[index].duration = buffer.duration;
                     console.log(`duration: ${buffer.duration} of ${index} is inserted`);
-                    
+
+                    this.audioCards[index] =    <div key={index} className="container">
+                                                    { React.cloneElement(this.audioCards[index].props.children, { isDone: true }) }
+                                                </div>
+                    numDurationsReceived = numDurationsReceived + 1;
+
+                    if (numDurationsReceived === tagArray.length)
+                    {
+                        console.log("setState");
+                        this.setState({
+                            isNeedToReRender: true
+                        });
+                    }
                 });
             };
         }
 
-        let triggerRerender = () => {
-            this.reRenderPage();
+        let triggerRerender = (numAdded) => {
+            this.reRenderPage(numAdded);
             this.setState({
                 isNeedtoReRender: true
             });
         }
 
         let fileList = event.target.files;
-        tagArray.length = processedItemNum + fileList.length;
+        let numAdded = fileList.length;
+        tagArray.length = numProcessedItem + numAdded;
 
         Array.from(fileList).map( (each) => {
             console.log("insertTagInfo->map() has ran");
@@ -150,41 +162,51 @@ class Main extends Component
                     
                     checker(tag, each.name);
                     tag.tags.file = each;
-                    tagArray[processedItemNum] = tag.tags;
-                    getDuration(each, processedItemNum);
+                    tagArray[numProcessedItem] = tag.tags;
+                    getDuration(each, numProcessedItem);
 
-                    processedItemNum = processedItemNum + 1;
-                    if (processedItemNum === tagArray.length) { triggerRerender(); }
+                    numProcessedItem = numProcessedItem + 1;
+                    if (numProcessedItem === tagArray.length) { triggerRerender(numAdded); }
                 },
                 onError: function(error) {
                     console.log("jsmediaTags.read() has been run, but failed");
                     checker(undefined, each.name);
-                    processedItemNum = processedItemNum + 1;
+                    numProcessedItem = numProcessedItem + 1;
                 }
             });
 
         });
     }
 
-    reRenderPage = () => {
+    reRenderPage = (numBeGoingToRender) => {
         console.log("reRenderPage() is going to run!!");
 
-        this.audioCards = tagArray.map( (each, i) => {
+        let startingIndex = 0;
+        if (numProcessedItem === 0)
+        {
+            startingIndex = 0;
+        }
+        else
+        {
+            startingIndex = numProcessedItem - numBeGoingToRender;
+        }
 
+        for (let i = 0; i < numBeGoingToRender; i++)
+        {
             let paramsForAudioInfo = {
-                pathname: `/${i}`,
+                pathname: `/${startingIndex}`,
                 audioInfo: {
-                    title: each.title,
-                    artist: each.artist,
-                    album: each.album,
-                    year: each.year,
-                    track: each.track,
-                    coverData: each.picture,
-                    file: each.file
+                    title: tagArray[startingIndex].title,
+                    artist: tagArray[startingIndex].artist,
+                    album: tagArray[startingIndex].album,
+                    year: tagArray[startingIndex].year,
+                    track: tagArray[startingIndex].track,
+                    coverData: tagArray[startingIndex].picture,
+                    file: tagArray[startingIndex].file
                 },
                 isHaveArt: true,
                 albumArtUrl: "",
-                index: i
+                index: startingIndex
             };
 
             if (paramsForAudioInfo.audioInfo.coverData === undefined) 
@@ -200,13 +222,11 @@ class Main extends Component
                 paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
             }
 
-            return (
-                <div key={i} className="container">
-                    <AudioCard audioInfoParams={ paramsForAudioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } />
-                </div>
-            );
-
-        });
+            this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
+                                                    <AudioCard audioInfoParams={ paramsForAudioInfo } audioSlot={ this.audioSlot } changePlayState={ this.changePlayState } />
+                                                </div>
+            startingIndex = startingIndex + 1;
+        }
     }
     
     componentDidMount()
@@ -217,6 +237,8 @@ class Main extends Component
         var instances = window.M.FloatingActionButton.init(elems, {
             direction: 'top'
         });
+
+        this.playButtonSymbol = "play_arrow";
     }
 
     componentDidUpdate()
@@ -224,7 +246,7 @@ class Main extends Component
         console.log("componentDidUpdate() has ran");
         console.log("this.state.isPlaying: " + this.state.isPlaying);
         console.log("this.CUE_CUR: " + this.CUE_CUR);
-        console.log(`processedItemNum: ${processedItemNum}, tagArray.length: ${tagArray.length}`);
+        console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
         console.log("tagArray: ", tagArray);
         console.log("============================");
     }

@@ -5,6 +5,7 @@ let nowPlaying = "";
 
 function AudioCard(props)
 { 
+    console.log(props);
     let _play = (event) => {
         event.preventDefault();
         props.audioSlot.src = URL.createObjectURL(props.audioInfoParams.audioInfo.file);
@@ -12,8 +13,8 @@ function AudioCard(props)
         nowPlaying = parseInt(event.target.id);
     }
 
-    let text = <a id={ props.audioInfoParams.index } href="#" onClick={ (event) => { _play(event) } }>{nowPlaying === props.audioInfoParams.index ? 'stop' : 'play'}</a>;
-    let bar = <div className="progress"><div className="indeterminate"></div></div>;
+    let loaded = <a id={ props.audioInfoParams.index } href="#" onClick={ (event) => { _play(event) } }>{nowPlaying === props.audioInfoParams.index ? 'stop' : 'play'}</a>;
+    let preloader = <div className="progress"><div className="indeterminate"></div></div>;
 
     return (
         <div className="col s2">
@@ -27,10 +28,7 @@ function AudioCard(props)
                     </div>
                 </Link>
                     <div id={ `${props.audioInfoParams.index}_selected` } className={"card-action " + (nowPlaying === props.audioInfoParams.index ? 'indigo' : '')}>
-                        {props.audioInfoParams.index === 1 ? text : bar}
-                            
-                        {/* <a id={ props.audioInfoParams.index } href="#" onClick={ (event) => { _play(event) } }>{nowPlaying === props.audioInfoParams.index ? 'stop' : 'play'}</a> */}
-                        {/* <div className="progress"><div className="indeterminate"></div></div> */}
+                        { props.isDone === true ? loaded : preloader }
                     </div>
             </div>
         </div>
