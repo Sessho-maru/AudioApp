@@ -146,10 +146,10 @@ class AudioInfo extends Component
         return (
             <div className="row">
                 <div className="container">
-                    <div className="col s7">
+                    <div className="col xl7 l5 m3 s1">
                         <TagInfo albumArt={ this.props.location.albumArtUrl }/>
                     </div>
-                    <div className="col s5">
+                    <div className="col xl5 l7 m9 s11">
                         <div id="YTcontent">
                             { this.state.isLoaded === false ? this.preloader : this.YTInfos }
                         </div>

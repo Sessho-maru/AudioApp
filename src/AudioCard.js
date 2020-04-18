@@ -7,7 +7,7 @@ function AudioCard(props)
     let preloader = <div className="progress"><div className="indeterminate"></div></div>;
 
     return (
-        <div className="col s2">
+        <div className="col xl2 l3 m6 s12">
             <div className="card hoverable small">
                 <Link to={ props.audioInfoParams }>
                     <div className="card-image">

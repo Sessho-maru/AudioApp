@@ -275,13 +275,7 @@ class Main extends Component
         
         return (
             <div className="row">
-                <div id="nav" className="col s2">
-                    <h1>Navbar</h1>
-                    <h1>Here</h1>
-                    <h1>Navbar</h1>
-                    <h1>Here</h1>
-                    <h1>Navbar</h1>
-                    <h1>Here</h1>
+                <div id="nav" className="col xl2 l2 m2 s2">
     
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
@@ -296,15 +290,17 @@ class Main extends Component
                     </div>
                 </div>
   
-                <div id="now_playing" className="col s10">
-                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red"><i className="large material-icons">{this.playButtonSymbol}</i></a>
+                <div id="now_playing" className="col xl10 l10 m10 s10">
+                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
+                        <i className="large material-icons">{this.playButtonSymbol}</i>
+                    </a>
                     <div id="now_playing_tag">
-                        <p id="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</p>
-                        <p id="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</p>
+                        <label id="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</label>
+                        <label id="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</label>
                     </div>
                 </div>
   
-                <div id="content" className="col s10">
+                <div id="content" className="col xl10 l10 m10 s10">
                     <Router>
                         <Route exact path="/" render={ () => { return (this.audioCards); }}/>
                         <Route exact path="/:audioIndex" component={AudioInfo} />

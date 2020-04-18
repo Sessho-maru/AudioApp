@@ -16,33 +16,6 @@ code {
 
 /* ============================================================================== */
 
-
-.App .btn-floating.btn-large {
-  width: 86px;
-  height: 86px;
-}
-.App .btn-floating.btn-large i {
-  line-height: 86px;
-}
-.App .btn-large i {
-  font-size: 4rem;
-}
-
-
-
-.App .btn-floating.btn-small  {
-  width: 56px;
-  height: 56px;
-}
-.App .btn-floating.btn-small i {
-  line-height: 56px;
-}
-.App .btn-small i {
-  font-size: 2rem;
-}
-
-
-
 .App #now_playing {
   height:13vh;
   display: flex;
@@ -52,18 +25,31 @@ code {
   border-width: 1px;
   border-color: #f4511c;
 }
+
 .App #play_button {
-  margin-left: 15px; 
+  margin-left: 15px;
 }
+.App .btn-floating.btn-large {
+  display: flex;
+  align-items: center;
+  width: 5.2vw;
+  height: 5.2vw;
+}
+.App .btn-floating.btn-large i {
+  font-size: 4vw;
+}
+
 .App #now_playing_tag {
-  display: block;
-  margin-left: 30px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 9px;
+  margin-left: 19px;
 }
 .App #album {
-
+  font-size: 1vw;
 }
 .App #artist_title {
-
+  font-size: 2vw;
 }
 
 
@@ -114,4 +100,14 @@ code {
   border-width: 2px;
   border-color: #f4511c;
   background-color:#e8eaf6;
+}
+
+.App .btn-floating.btn-small  {
+  display: flex;
+  align-items: center;
+  width: 3.2vw;
+  height: 3.2vw;
+}
+.App .btn-floating.btn-small i {
+  font-size: 2vw;
 }
