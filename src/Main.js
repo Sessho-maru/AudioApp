@@ -29,14 +29,29 @@ class Main extends Component
         };
     }
 
-    _pause = () => {
+    queueNextAudio = (pausedAt = 0) => {
+        clearTimeout(this.timeoutId);
+        this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
+        this.timeoutId = setTimeout( () => {
+            if (parseInt(this.CUE.NEXT) === tagArray.length) {
+                this.CUE.NEXT = this.CUE.CUR;
+                this._playAndChangeStateAndAlterLabel();
+            }
+            else {
+                this._playAndChangeStateAndAlterLabel();
+            }
+        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 1000 );
+    }
+
+    _pauseAndChangeState = () => {
         if (this.state.isPlaying === true)
         {
             console.log("PAUSE");
-            clearTimeout(this.timeoutId);
 
+            clearTimeout(this.timeoutId);
             this.pausedAt = this.audio.currentTime;
             this.audio.pause();
+
             this.setState({
                 isPlaying: false
             });
@@ -48,17 +63,7 @@ class Main extends Component
                 console.log("PLAY");
                 this.audio.play();
 
-                this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
-                this.timeoutId = setTimeout( () => {
-                    if (parseInt(this.CUE.NEXT) === tagArray.length) {
-                        this.CUE.NEXT = this.CUE.CUR;
-                        this.changePlayState();
-                    }
-                    else {
-                        this._play();
-                    }
-                }, (tagArray[this.CUE.CUR].duration - this.pausedAt) * 1000 );
-
+                this.queueNextAudio(this.pausedAt);
                 this.setState({
                     isPlaying: true
                 });
@@ -68,94 +73,80 @@ class Main extends Component
 
     _stop = () => {
         console.log("STOP");
+        clearTimeout(this.timeoutId);
         this.audio.pause();
         this.audio = null;
     }
 
-    _play = () => {
+    _playAndChangeStateAndAlterLabel = () => {
         console.log("PLAY");
-        if (this.CUE.CUR === "") 
-        {
-            this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
-            this.audio.play();
-        }
-        else 
-        {
-            if (this.CUE.CUR !== this.CUE.NEXT)
-            {
-                this.audio.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
-                this.audio.play();
-            }
-        }
-        this.changePlayState();
-    }
 
-    changePlayState = () => {
-        console.log(`Now: ${this.CUE.CUR}, and Next is: ${this.CUE.NEXT}`);
-
-        let QueueNextAudio = () => {
-            clearTimeout(this.timeoutId);
-            this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
-            this.timeoutId = setTimeout( () => {
-                if (parseInt(this.CUE.NEXT) === tagArray.length) {
-                    this.CUE.NEXT = this.CUE.CUR;
-                    this.changePlayState();
-                }
-                else {
-                    this._play();
-                }
-            }, (tagArray[this.CUE.CUR].duration) * 1000 );
-        }
-
-        let alterPlayingLabel = () => {
-            if (this.CUE.CUR === "")
-            {
-                document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
-                document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
-            }
-            else if (this.CUE.CUR === this.CUE.NEXT)
-            {
-                document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
-                document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
-            }
-            else
-            {
-                document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
-                document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
-                document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
-                document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
+        let mode = "";
+        let alterPlayingLabel = (mode) => {
+            switch (mode) {
+                case 'play':
+                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "stop";
+                    document.getElementById(`${this.CUE.CUR}_selected`).classList.add("indigo");
+                    break;
+                case 'stop':
+                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
+                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+                    break;
+                case 'change':
+                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
+                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+                    document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
+                    document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
+                    break;
             }
         }
         
-        if (this.CUE.CUR !== this.CUE.NEXT)
-        {
-            if (this.CUE.CUR === "")
-            {
-                alterPlayingLabel()
+        switch (true) {
+            case this.CUE.CUR === "":
+                mode = 'play';
+
+                this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
+                this.audio.play();
+
                 this.CUE.CUR = this.CUE.NEXT;
-                QueueNextAudio();
+                this.queueNextAudio();
+                alterPlayingLabel(mode);
+
+                this.pausedAt = 0;
                 this.setState({
                     isPlaying: true
                 });
-                return;
-            }
-            alterPlayingLabel()
-            this.CUE.CUR = this.CUE.NEXT;
-            QueueNextAudio();
-            this.setState({
-                isPlaying: true
-            });
-        }
-        else
-        {
-            clearTimeout(this.timeoutId);
-            alterPlayingLabel()
-            this._stop();
-            this.CUE.CUR = "";
-            this.CUE.NEXT = "";
-            this.setState({
-                isPlaying: false
-            });
+                break;
+
+            case this.CUE.CUR === this.CUE.NEXT:
+                mode = 'stop';
+
+                this._stop();
+
+                alterPlayingLabel(mode);
+                this.CUE.CUR = "";
+                this.CUE.NEXT = "";
+
+                this.pausedAt = 0;
+                this.setState({
+                    isPlaying: false
+                });
+                break;
+
+            default:
+                mode = 'change';
+
+                this.audio.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
+                this.audio.play();
+                
+                alterPlayingLabel(mode);
+                this.CUE.CUR = this.CUE.NEXT;
+                this.queueNextAudio();
+
+                this.pausedAt = 0;
+                this.setState({
+                    isPlaying: true
+                });
         }
     }
 
@@ -173,7 +164,7 @@ class Main extends Component
         }
     }
     
-    insertTagInfo = (event, initializing) => {
+    insertTagInfoAndChangeState = (event, initializing) => {
         if (initializing === true)
         {
             if (numProcessedItem > 0)
@@ -181,17 +172,26 @@ class Main extends Component
                 tagArray = [];
                 this.audioCards = [];
 
-                if (this.state.isPlaying === true)
+                if (this.state.isPlaying === true || this.pausedAt !== 0)
                 {
-                    clearTimeout(this.timeoutId);
-                    this.audio.pause();
-                    this.audio = null;
+                    this._stop();
+                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
+                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
                 }
 
                 numProcessedItem = 0;
                 numDurationsReceived = 0;
                 this.CUE.CUR = "";
                 this.CUE.NEXT = "";
+
+                if (event.target.files.length === 0)
+                {
+                    this.setState({
+                        isPlaying: false,
+                        isNeedtoReRender: true
+                    });
+                    return;
+                }
             }            
         }
 
@@ -316,7 +316,7 @@ class Main extends Component
             }
 
             this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
-                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._play }/>
+                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._playAndChangeStateAndAlterLabel }/>
                                                 </div>
             startingIndex = startingIndex + 1;
         }
@@ -334,7 +334,7 @@ class Main extends Component
     {
         console.log("componentDidUpdate() has ran");
         console.log("this.state.isPlaying: " + this.state.isPlaying);
-        console.log("nowPlaying: " + this.CUE.CUR);
+        if (this.state.isPlaying === true) { console.log(`nowPlaying: ${this.CUE.CUR}, duration: ${tagArray[this.CUE.CUR].duration - this.pausedAt}`); }
         console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
         console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
         console.log("tagArray: ", tagArray);
@@ -369,7 +369,7 @@ class Main extends Component
   
                 <div id="now_playing" className="col xl10 l10 m10 s10">
                     <a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
-                        <i className="large material-icons" onClick={ () => { this._pause() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
+                        <i className="large material-icons" onClick={ () => { this._pauseAndChangeState() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
                     </a>
                     <div id="now_playing_tag">
                         <label id="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</label>
@@ -384,8 +384,8 @@ class Main extends Component
                     </Router>
                 </div>
 
-                <input type="file" id="new" onChange={ (event) => {this.insertTagInfo(event, true)} } multiple hidden/>
-                <input type="file" id="append" onChange={ (event) => {this.insertTagInfo(event, false)} } multiple hidden/>
+                <input type="file" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event, true)} } multiple hidden/>
+                <input type="file" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event, false)} } multiple hidden/>
             </div>
         );
     }
