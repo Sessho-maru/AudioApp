@@ -13,7 +13,9 @@ class AudioInfo extends Component
         super();
         this.contentArray = [];
         this.YTInfos = [];
+        this.chunk = [];
         this.preloader = "";
+        this.numTry = 0;
 
         this.state = { 
             isntFetchable: false, 
@@ -21,25 +23,9 @@ class AudioInfo extends Component
         };
     }
 
-    componentDidMount()
-    {
-        console.log(this.props.location);
-        if (this.props.location.audioInfo.title === 'untitled' || this.props.location.audioInfo.artist === "")
-        {
-            this.preloader = <div id="preloader">
-                                <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
-                             </div>
-            this.setState({ isntFetchable: true });
-            return;
-        }
-
-        const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
-        console.log(`search term: ${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`);
-        const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
-        let chunk = [];
-
+    getYoutubeData = (url) => {
         // 1. Send axios request to Youtube
-        axios.get(corsAnywhere + dist)
+        axios.get(url)
             .then( (res) => {
                 /* console.log(res.data); */
 
@@ -47,11 +33,11 @@ class AudioInfo extends Component
                 let $ = cheerio.load(res.data);
 
                 $('script').each( (i, element) => {
-                    chunk.push($(element));
+                    this.chunk.push($(element));
                 });
 
-                let length = chunk.length;
-                const rawString = $(chunk[length - OFFSET_INDEX_CONTAIN_YTINITIALDATA]).contents()[0].data;
+                let length = this.chunk.length;
+                const rawString = $(this.chunk[length - OFFSET_INDEX_CONTAIN_YTINITIALDATA]).contents()[0].data;
                 /* console.log(rawString); */
 
         // 3. Find the Object that has youtube.videoRenderer Object
@@ -114,12 +100,35 @@ class AudioInfo extends Component
                 });
 
                 console.log("Packed Component Array", this.YTInfos);
+                if (this.numTry > 0) {this.numTry = 0;}
                 this.setState({ isLoaded: true });
 
             })
             .catch( (err) => {
                 console.log("something goes wrong");
+                this.numTry = this.numTry + 1;
+                console.log(this.numTry);
+                if (this.numTry < 3) { this.getYoutubeData(url); }
             });
+    }
+
+    componentDidMount()
+    {
+        console.log(this.props.location);
+        if (this.props.location.audioInfo.title === 'untitled' || this.props.location.audioInfo.artist === "")
+        {
+            this.preloader = <div id="preloader">
+                                <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
+                             </div>
+            this.setState({ isntFetchable: true });
+            return;
+        }
+
+        const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
+        console.log(`search term: ${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`);
+        const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
+
+        this.getYoutubeData(corsAnywhere + dist);
     }
 
     render()

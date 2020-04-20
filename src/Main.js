@@ -83,6 +83,11 @@ class Main extends Component
 
         let mode = "";
         let alterPlayingLabel = (mode) => {
+            if (window.location.href !== 'http://localhost:3000/')
+            {
+                return;
+            }
+
             switch (mode) {
                 case 'play':
                     document.getElementById(`${this.CUE.CUR}`).innerHTML = "stop";
