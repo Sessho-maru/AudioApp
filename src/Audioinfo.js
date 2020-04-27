@@ -6,6 +6,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const OFFSET_INDEX_CONTAIN_YTINITIALDATA = 3;
 
+let receivedParam = {};
+
 class AudioInfo extends Component
 {
     constructor()
@@ -112,10 +114,18 @@ class AudioInfo extends Component
             });
     }
 
+    componentWillMount()
+    {
+        if (this.props.location.audioInfo !== undefined)
+        {
+            receivedParam = this.props.location;
+        }
+        console.log(receivedParam);
+    }
+
     componentDidMount()
     {
-        console.log(this.props.location);
-        if (this.props.location.audioInfo.title === 'untitled' || this.props.location.audioInfo.artist === "")
+        if (receivedParam.audioInfo.title === 'untitled' || receivedParam.audioInfo.artist === "")
         {
             this.preloader = <div id="preloader">
                                 <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
@@ -125,8 +135,8 @@ class AudioInfo extends Component
         }
 
         const corsAnywhere = "https://cors-anywhere.herokuapp.com/";
-        console.log(`search term: ${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`);
-        const dist = `https://www.youtube.com/results?search_query=${this.props.location.audioInfo.artist} - ${this.props.location.audioInfo.title}`;
+        console.log(`search term: ${receivedParam.audioInfo.artist} - ${receivedParam.audioInfo.title}`);
+        const dist = `https://www.youtube.com/results?search_query=${receivedParam.audioInfo.artist} - ${receivedParam.audioInfo.title}`;
 
         this.getYoutubeData(corsAnywhere + dist);
     }
@@ -156,7 +166,7 @@ class AudioInfo extends Component
             <div className="row">
                 <div className="container">
                     <div className="col xl7 l5 m3 s1">
-                        <TagInfo albumArt={ this.props.location.albumArtUrl }/>
+                        <TagInfo albumArt={ receivedParam.albumArtUrl }/>
                     </div>
                     <div className="col xl5 l7 m9 s11">
                         <div id="YTcontent">

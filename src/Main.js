@@ -3,9 +3,11 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
-var tagArray = [];
-var numProcessedItem = 0;
-var numDurationsReceived = 0;
+let tagArray = [];
+let numProcessedItem = 0;
+let numDurationsReceived = 0;
+
+const rootDir = {local: 'http://localhost:3000/', server: 'http://ec2-52-90-166-142.compute-1.amazonaws.com/'};
 
 class Main extends Component
 {
@@ -23,6 +25,9 @@ class Main extends Component
             NEXT: ""
         };
 
+        this.isAddingQueue = false;
+        this.queueArray = [];
+
         this.state = {
             isNeedToReRender: false,
             isPlaying: false,
@@ -33,14 +38,64 @@ class Main extends Component
         clearTimeout(this.timeoutId);
         this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
         this.timeoutId = setTimeout( () => {
-            if (parseInt(this.CUE.NEXT) === tagArray.length) {
+            if (parseInt(this.CUE.NEXT) === tagArray.length && this.queueArray.length === 0) {
                 this.CUE.NEXT = this.CUE.CUR;
                 this._playAndChangeStateAndAlterLabel();
             }
             else {
+                if (this.queueArray.length > 0)
+                {
+                    this.CUE.NEXT = (this.queueArray.shift()).toString();
+                }
                 this._playAndChangeStateAndAlterLabel();
             }
-        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 1000 );
+        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 100 );
+    }
+
+    queueByUserInput = () => {
+        if (this.isAddingQueue === true)
+        {
+            for (let index = 0; index < numDurationsReceived; index++)
+            {
+                if (index === parseInt(this.CUE.CUR))
+                {
+                    continue;
+                }
+                document.getElementById(`${index}_selected`).classList.remove("grey");
+                document.getElementById(`${index}`).innerHTML = "play";
+            }
+
+            this.isAddingQueue = false;
+            this.setState({
+                isNeedtoReRender: true
+            });
+            return;
+        }
+        else
+        {
+            for (let index = 0; index < numDurationsReceived; index++)
+            {
+                if (index === parseInt(this.CUE.CUR))
+                {
+                    continue;
+                }
+
+                document.getElementById(`${index}_selected`).classList.add("grey");
+                if (this.queueArray.includes(index) === true)
+                {
+                    document.getElementById(`${index}`).innerHTML = (this.queueArray.indexOf(index) + 1).toString();
+                }
+                else
+                {
+                    document.getElementById(`${index}`).innerHTML = "enqueue"
+                }
+            }
+
+            this.isAddingQueue = true;
+            this.setState({
+                isNeedtoReRender: true
+            });
+        }
     }
 
     _pauseAndChangeState = () => {
@@ -79,11 +134,20 @@ class Main extends Component
     }
 
     _playAndChangeStateAndAlterLabel = () => {
+        if (this.isAddingQueue === true)
+        {
+            this.queueArray.push(parseInt(this.CUE.NEXT));
+            document.getElementById(`${this.CUE.NEXT}`).innerHTML = this.queueArray.length;
+            this.setState({
+                isNeedtoReRender: true
+            });
+            return;
+        }
         console.log("PLAY");
 
         let mode = "";
         let alterPlayingLabel = (mode) => {
-            if (window.location.href !== 'http://localhost:3000/')
+            if (window.location.href !== rootDir.local)
             {
                 return;
             }
@@ -342,8 +406,12 @@ class Main extends Component
         if (this.state.isPlaying === true) { console.log(`nowPlaying: ${this.CUE.CUR}, duration: ${tagArray[this.CUE.CUR].duration - this.pausedAt}`); }
         console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
         console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
+        console.log("Queued: ", this.queueArray);
         console.log("tagArray: ", tagArray);
         console.log("============================");
+        this.queueArray.map( (each) => {
+            console.assert(typeof(each) === 'number');
+        });
     }
 
     componentWillUnmount()
@@ -358,6 +426,7 @@ class Main extends Component
         return (
             <div className="row">
                 <div id="nav" className="col xl2 l2 m2 s2">
+                    <h2 onClick={ () => {this.queueByUserInput()} }>Queuing</h2>
     
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
