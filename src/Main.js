@@ -11,6 +11,25 @@ const rootDir = {local: 'http://localhost:3000/', server: 'http://ec2-52-90-166-
 
 class Main extends Component
 {
+    static alterLabel = {
+        setPlayingStatus: {
+            text: (dist) => { document.getElementById(`${dist}`).innerHTML = "stop"; },
+            color: (dist) => { document.getElementById(`${dist}_selected`).classList.add("indigo"); }
+        },
+        setStopStatus: {
+            text: (dist) => { document.getElementById(`${dist}`).innerHTML = "play"; },
+            color: (dist) => { document.getElementById(`${dist}_selected`).classList.remove("indigo"); }
+        },
+        setQueuedStatus: {
+            text: (dist, currentlySelected = 'enqueue') => { document.getElementById(`${dist}`).innerHTML = currentlySelected; },
+            color: (dist) => { document.getElementById(`${dist}_selected`).classList.add("grey"); document.getElementById(`${dist}_selected`).classList.add("darken-3"); }
+        },
+        turningOffQueueState: {
+            text: (dist) => { document.getElementById(`${dist}`).innerHTML = 'play'; },
+            color: (dist) => { document.getElementById(`${dist}_selected`).classList.remove("grey"); document.getElementById(`${dist}_selected`).classList.remove("darken-3"); }
+        }
+    }
+
     constructor()
     {
         super();
@@ -25,7 +44,7 @@ class Main extends Component
             NEXT: ""
         };
 
-        this.isAddingQueue = false;
+        this.isQueuingMode = false;
         this.queueArray = [];
 
         this.state = {
@@ -42,18 +61,27 @@ class Main extends Component
                 this.CUE.NEXT = this.CUE.CUR;
                 this._playAndChangeStateAndAlterLabel();
             }
-            else {
+            else
+            {
                 if (this.queueArray.length > 0)
                 {
                     this.CUE.NEXT = (this.queueArray.shift()).toString();
                 }
-                this._playAndChangeStateAndAlterLabel();
+
+                if (this.isQueuingMode === true)
+                {
+                    this.toggleQueuingMode();
+                    this._playAndChangeStateAndAlterLabel();
+                    this.toggleQueuingMode();
+                }else {
+                    this._playAndChangeStateAndAlterLabel();
+                }
             }
-        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 100 );
+        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 1000 );
     }
 
-    queueByUserInput = () => {
-        if (this.isAddingQueue === true)
+    toggleQueuingMode = () => {
+        if (this.isQueuingMode === true)
         {
             for (let index = 0; index < numDurationsReceived; index++)
             {
@@ -61,11 +89,11 @@ class Main extends Component
                 {
                     continue;
                 }
-                document.getElementById(`${index}_selected`).classList.remove("grey");
-                document.getElementById(`${index}`).innerHTML = "play";
+                Main.alterLabel.turningOffQueueState.text(index);
+                Main.alterLabel.turningOffQueueState.color(index);
             }
 
-            this.isAddingQueue = false;
+            this.isQueuingMode = false;
             this.setState({
                 isNeedtoReRender: true
             });
@@ -80,18 +108,19 @@ class Main extends Component
                     continue;
                 }
 
-                document.getElementById(`${index}_selected`).classList.add("grey");
+                Main.alterLabel.setQueuedStatus.color(index);
                 if (this.queueArray.includes(index) === true)
                 {
-                    document.getElementById(`${index}`).innerHTML = (this.queueArray.indexOf(index) + 1).toString();
+                    Main.alterLabel.setQueuedStatus.text(index, this.queueArray.indexOf(index) + 1);
+                    // document.getElementById(`${index}`).innerHTML = (this.queueArray.indexOf(index) + 1);
                 }
                 else
                 {
-                    document.getElementById(`${index}`).innerHTML = "enqueue"
+                    Main.alterLabel.setQueuedStatus.text(index);
                 }
             }
 
-            this.isAddingQueue = true;
+            this.isQueuingMode = true;
             this.setState({
                 isNeedtoReRender: true
             });
@@ -134,10 +163,11 @@ class Main extends Component
     }
 
     _playAndChangeStateAndAlterLabel = () => {
-        if (this.isAddingQueue === true)
+        if (this.isQueuingMode === true)
         {
             this.queueArray.push(parseInt(this.CUE.NEXT));
-            document.getElementById(`${this.CUE.NEXT}`).innerHTML = this.queueArray.length;
+            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.queueArray.length);
+            // document.getElementById(`${this.CUE.NEXT}`).innerHTML = this.queueArray.length;
             this.setState({
                 isNeedtoReRender: true
             });
@@ -154,18 +184,18 @@ class Main extends Component
 
             switch (mode) {
                 case 'play':
-                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "stop";
-                    document.getElementById(`${this.CUE.CUR}_selected`).classList.add("indigo");
+                    Main.alterLabel.setPlayingStatus.text(this.CUE.CUR);
+                    Main.alterLabel.setPlayingStatus.color(this.CUE.CUR);
                     break;
                 case 'stop':
-                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
-                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
+                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
                     break;
                 case 'change':
-                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
-                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
-                    document.getElementById(`${this.CUE.NEXT}`).innerHTML = "stop";
-                    document.getElementById(`${this.CUE.NEXT}_selected`).classList.add("indigo");
+                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
+                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
+                    Main.alterLabel.setPlayingStatus.text(this.CUE.NEXT);
+                    Main.alterLabel.setPlayingStatus.color(this.CUE.NEXT);
                     break;
             }
         }
@@ -244,8 +274,10 @@ class Main extends Component
                 if (this.state.isPlaying === true || this.pausedAt !== 0)
                 {
                     this._stop();
-                    document.getElementById(`${this.CUE.CUR}`).innerHTML = "play";
-                    document.getElementById(`${this.CUE.CUR}_selected`).classList.remove("indigo");
+                    this.pausedAt = 0;
+
+                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
+                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
                 }
 
                 numProcessedItem = 0;
@@ -426,7 +458,7 @@ class Main extends Component
         return (
             <div className="row">
                 <div id="nav" className="col xl2 l2 m2 s2">
-                    <h2 onClick={ () => {this.queueByUserInput()} }>Queuing</h2>
+                    <h2 onClick={ () => {this.toggleQueuingMode()} }>Queuing</h2>
     
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
