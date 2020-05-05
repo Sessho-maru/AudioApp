@@ -44,8 +44,11 @@ class Main extends Component
             NEXT: ""
         };
 
-        this.isQueuingMode = false;
         this.queueArray = [];
+        
+        this.isQueuingMode = false;
+        this.isShuffleMode = false;
+        this.isRepeatMode = false;
 
         this.state = {
             isNeedToReRender: false,
@@ -55,75 +58,96 @@ class Main extends Component
 
     queueNextAudio = (pausedAt = 0) => {
         clearTimeout(this.timeoutId);
-        this.CUE.NEXT = (parseInt(this.CUE.CUR) + 1).toString();
-        this.timeoutId = setTimeout( () => {
-            if (parseInt(this.CUE.NEXT) === tagArray.length && this.queueArray.length === 0) {
+
+        switch (true) {
+            case this.isShuffleMode === true :
+                this.CUE.NEXT = Math.floor(Math.random() * 1000) % numDurationsReceived;
+                break;
+            case this.isRepeatMode === true :
                 this.CUE.NEXT = this.CUE.CUR;
-                this._playAndChangeStateAndAlterLabel();
+                break;
+            default :
+                this.CUE.NEXT = (this.CUE.CUR) + 1;
+                break;
+        }
+
+        this.timeoutId = setTimeout( () => {
+            if (this.CUE.NEXT === tagArray.length && this.queueArray.length === 0) {
+                this._stopAndChangeState();
             }
             else
             {
                 if (this.queueArray.length > 0)
                 {
-                    this.CUE.NEXT = (this.queueArray.shift()).toString();
+                    this.CUE.NEXT = (this.queueArray.shift());
                 }
 
                 if (this.isQueuingMode === true)
                 {
                     this.toggleQueuingMode();
-                    this._playAndChangeStateAndAlterLabel();
+                    this._playAndChangeState();
                     this.toggleQueuingMode();
                 }else {
-                    this._playAndChangeStateAndAlterLabel();
+                    this._playAndChangeState();
                 }
             }
         }, (tagArray[this.CUE.CUR].duration - pausedAt) * 1000 );
     }
 
     toggleQueuingMode = () => {
+        if (window.location.href !== rootDir.local)
+        {
+            return;
+        }
+
         if (this.isQueuingMode === true)
         {
             for (let index = 0; index < numDurationsReceived; index++)
             {
-                if (index === parseInt(this.CUE.CUR))
+                if (index === this.CUE.CUR)
                 {
                     continue;
                 }
                 Main.alterLabel.turningOffQueueState.text(index);
                 Main.alterLabel.turningOffQueueState.color(index);
             }
-
             this.isQueuingMode = false;
-            this.setState({
-                isNeedtoReRender: true
-            });
-            return;
         }
         else
         {
-            for (let index = 0; index < numDurationsReceived; index++)
+            for (let i = 0; i < numDurationsReceived; i++)
             {
-                if (index === parseInt(this.CUE.CUR))
+                if (i === this.CUE.CUR)
                 {
                     continue;
                 }
+                Main.alterLabel.setQueuedStatus.color(i);
+            }
+            this.updateQueuedNumber();
+            this.isQueuingMode = true;
+        }
 
-                Main.alterLabel.setQueuedStatus.color(index);
-                if (this.queueArray.includes(index) === true)
-                {
-                    Main.alterLabel.setQueuedStatus.text(index, this.queueArray.indexOf(index) + 1);
-                    // document.getElementById(`${index}`).innerHTML = (this.queueArray.indexOf(index) + 1);
-                }
-                else
-                {
-                    Main.alterLabel.setQueuedStatus.text(index);
-                }
+        this.setState({
+            isNeedtoReRender: true
+        });
+    }
+
+    updateQueuedNumber = () => {
+        for (let index = 0; index < numDurationsReceived; index++)
+        {
+            if (index === this.CUE.CUR)
+            {
+                continue;
             }
 
-            this.isQueuingMode = true;
-            this.setState({
-                isNeedtoReRender: true
-            });
+            if (this.queueArray.includes(index) === true)
+            {
+                Main.alterLabel.setQueuedStatus.text(index, this.queueArray.indexOf(index) + 1);
+            }
+            else
+            {
+                Main.alterLabel.setQueuedStatus.text(index);
+            }
         }
     }
 
@@ -155,98 +179,96 @@ class Main extends Component
         }
     }
 
-    _stop = () => {
+    _stopAndChangeState = () => {
         console.log("STOP");
         clearTimeout(this.timeoutId);
+
+        Main.alterLabel.setStopStatus.text(this.CUE.CUR);
+        Main.alterLabel.setStopStatus.color(this.CUE.CUR);
+
         this.audio.pause();
         this.audio = null;
+        
+        this.CUE.CUR = "";
+        this.CUE.NEXT = "";
+        this.pausedAt = 0;
+
+        this.setState({
+            isPlaying: false
+        });
+
     }
 
-    _playAndChangeStateAndAlterLabel = () => {
+    _playAndChangeState = (isUserInput = false) => {
+        if ((this.CUE.NEXT === this.CUE.CUR) && isUserInput === true)
+        {
+            this._stopAndChangeState();
+            return;
+        }
+
         if (this.isQueuingMode === true)
         {
-            this.queueArray.push(parseInt(this.CUE.NEXT));
+            if (this.queueArray.includes(this.CUE.NEXT) === true)
+            {
+                let pos = this.queueArray.indexOf(this.CUE.NEXT);
+                this.queueArray.splice(pos, 1);
+                
+                this.updateQueuedNumber();
+                this.setState({
+                    isNeedtoReRender: true
+                });
+                return;
+            }
+
+            this.queueArray.push(this.CUE.NEXT);
             Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.queueArray.length);
-            // document.getElementById(`${this.CUE.NEXT}`).innerHTML = this.queueArray.length;
             this.setState({
                 isNeedtoReRender: true
             });
             return;
         }
+
         console.log("PLAY");
+        if (this.CUE.CUR === "")
+        {
+            this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
+            this.audio.play();
 
-        let mode = "";
-        let alterPlayingLabel = (mode) => {
-            if (window.location.href !== rootDir.local)
+            this.CUE.CUR = this.CUE.NEXT;
+            this.queueNextAudio();
+
+            if (window.location.href === rootDir.local)
             {
-                return;
+                Main.alterLabel.setPlayingStatus.text(this.CUE.CUR);
+                Main.alterLabel.setPlayingStatus.color(this.CUE.CUR);
             }
 
-            switch (mode) {
-                case 'play':
-                    Main.alterLabel.setPlayingStatus.text(this.CUE.CUR);
-                    Main.alterLabel.setPlayingStatus.color(this.CUE.CUR);
-                    break;
-                case 'stop':
-                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
-                    break;
-                case 'change':
-                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
-                    Main.alterLabel.setPlayingStatus.text(this.CUE.NEXT);
-                    Main.alterLabel.setPlayingStatus.color(this.CUE.NEXT);
-                    break;
-            }
+            this.pausedAt = 0;
+            this.setState({
+                isPlaying: true
+            });
+            return;
         }
+
+        this.audio.pause();
+        this.audio.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
+        this.audio.play();
         
-        switch (true) {
-            case this.CUE.CUR === "":
-                mode = 'play';
-
-                this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
-                this.audio.play();
-
-                this.CUE.CUR = this.CUE.NEXT;
-                this.queueNextAudio();
-                alterPlayingLabel(mode);
-
-                this.pausedAt = 0;
-                this.setState({
-                    isPlaying: true
-                });
-                break;
-
-            case this.CUE.CUR === this.CUE.NEXT:
-                mode = 'stop';
-
-                this._stop();
-
-                alterPlayingLabel(mode);
-                this.CUE.CUR = "";
-                this.CUE.NEXT = "";
-
-                this.pausedAt = 0;
-                this.setState({
-                    isPlaying: false
-                });
-                break;
-
-            default:
-                mode = 'change';
-
-                this.audio.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
-                this.audio.play();
-                
-                alterPlayingLabel(mode);
-                this.CUE.CUR = this.CUE.NEXT;
-                this.queueNextAudio();
-
-                this.pausedAt = 0;
-                this.setState({
-                    isPlaying: true
-                });
+        if (window.location.href === rootDir.local)
+        {
+            Main.alterLabel.setStopStatus.text(this.CUE.CUR);
+            Main.alterLabel.setStopStatus.color(this.CUE.CUR);
+            Main.alterLabel.setPlayingStatus.text(this.CUE.NEXT);
+            Main.alterLabel.setPlayingStatus.color(this.CUE.NEXT);
         }
+
+        this.CUE.CUR = this.CUE.NEXT;
+        this.queueNextAudio();
+
+        this.pausedAt = 0;
+        this.setState({
+            isPlaying: true
+        });
     }
 
     openFileDialog = (clearTagArray) => {
@@ -273,7 +295,8 @@ class Main extends Component
 
                 if (this.state.isPlaying === true || this.pausedAt !== 0)
                 {
-                    this._stop();
+                    this.audio.pause();
+                    this.audio = null;
                     this.pausedAt = 0;
 
                     Main.alterLabel.setStopStatus.text(this.CUE.CUR);
@@ -396,28 +419,27 @@ class Main extends Component
                     album: tagArray[startingIndex].album,
                     year: tagArray[startingIndex].year,
                     track: tagArray[startingIndex].track,
-                    coverData: tagArray[startingIndex].picture,
                 },
                 isHaveArt: true,
                 albumArtUrl: "",
                 index: startingIndex
             };
 
-            if (paramsForAudioInfo.audioInfo.coverData === undefined) 
+            if (tagArray[startingIndex].picture === undefined) 
             {
                 paramsForAudioInfo.isHaveArt = false;
                 paramsForAudioInfo.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
             }
             else
             {
-                const { data, type } = paramsForAudioInfo.audioInfo.coverData;
+                const { data, type } = tagArray[startingIndex].picture;
                 const byteArray = new Uint8Array(data);
                 const blob = new Blob([byteArray], { type });
                 paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
             }
 
             this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
-                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._playAndChangeStateAndAlterLabel }/>
+                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._playAndChangeState }/>
                                                 </div>
             startingIndex = startingIndex + 1;
         }
@@ -441,6 +463,11 @@ class Main extends Component
         console.log("Queued: ", this.queueArray);
         console.log("tagArray: ", tagArray);
         console.log("============================");
+        if (this.isShuffleMode || this.isRepeatMode) { 
+            document.getElementById('queuing_button').classList.add('disabled'); 
+        }else {
+            document.getElementById('queuing_button').classList.remove('disabled');
+        }
         this.queueArray.map( (each) => {
             console.assert(typeof(each) === 'number');
         });
@@ -458,7 +485,7 @@ class Main extends Component
         return (
             <div className="row">
                 <div id="nav" className="col xl2 l2 m2 s2">
-                    <h2 onClick={ () => {this.toggleQueuingMode()} }>Queuing</h2>
+                    <p id="queuing_button" onClick={ () => {this.toggleQueuingMode()} }>Queuing</p>
     
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
@@ -477,9 +504,39 @@ class Main extends Component
                     <a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
                         <i className="large material-icons" onClick={ () => { this._pauseAndChangeState() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
                     </a>
-                    <div id="now_playing_tag">
-                        <label id="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</label>
-                        <label id="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</label>
+                    <div className="panel">
+                        <div className="title_and_album">
+                            <label className="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</label>
+                            <label className="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</label>
+                        </div>
+                        
+                        <div className="controller">
+                            <div className="controls">
+                                <div className="shuffle">
+                                    <i id="shuffle_icon" className="medium material-icons" onClick={ (event) => {
+                                            this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
+                                            this.isShuffleMode = !(this.isShuffleMode);
+                                            if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+                                            if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
+                                            if (this.isQueuingMode === true) { this.toggleQueuingMode(); }
+                                            this.setState({isNeedToReRender: true});
+                                        }}>{"shuffle"}</i>
+                                </div>
+                                <div className="repeat">
+                                    <i id="repeat_icon" className="medium material-icons" onClick={ (event) => { 
+                                            this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
+                                            this.isRepeatMode = !(this.isRepeatMode);
+                                            if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+                                            if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
+                                            if (this.isQueuingMode === true) { this.toggleQueuingMode(); }
+                                            this.setState({isNeedToReRender: true});
+                                        }}>{"repeat"}</i>
+                                </div>
+                                <div className="next">
+                                    <i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(tagArray[this.CUE.CUR].duration); } }}>{"skip_next"}</i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
   

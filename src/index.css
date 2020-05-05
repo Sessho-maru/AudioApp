@@ -13,9 +13,7 @@ code {
     monospace;
 }
 
-
 /* ============================================================================== */
-
 .App #now_playing {
   height:13vh;
   display: flex;
@@ -25,34 +23,77 @@ code {
   border-width: 1px;
   border-color: #f4511c;
 }
+  .App #play_button {
+    margin-left: 15px;
+  }
+    .App .btn-floating.btn-large {
+      display: flex;
+      align-items: center;
+      width: 5.2vw;
+      height: 5.2vw;
+    }
+    .App .btn-floating.btn-large i {
+      font-size: 4vw;
+    }
 
-.App #play_button {
-  margin-left: 15px;
-}
-.App .btn-floating.btn-large {
-  display: flex;
-  align-items: center;
-  width: 5.2vw;
-  height: 5.2vw;
-}
-.App .btn-floating.btn-large i {
-  font-size: 4vw;
-}
+  .App #now_playing .panel {
+    width: 90%;
+    display:flex;
+    justify-content: space-between;
+  }
+    .App #now_playing .panel .title_and_album {
+      display: flex;
+      flex-direction: column;
+      margin-top: 9px;
+      margin-left: 19px;
+    }
+      .App #now_playing .panel .title_and_album .album {
+        font-size: 1vw;
+      }
+      .App #now_playing .panel .title_and_album .artist_title {
+        font-size: 2vw;
+      }
 
-.App #now_playing_tag {
-  display: flex;
-  flex-direction: column;
-  margin-top: 9px;
-  margin-left: 19px;
-}
-.App #album {
-  font-size: 1vw;
-}
-.App #artist_title {
-  font-size: 2vw;
-}
-
-
+    .App #now_playing .panel .controller {
+      background-color: #fff;
+      border-radius: 15px;
+      width: 300px;
+      height: 80px;
+      z-index: 5;
+      box-shadow: 0px 10px 10px 5px rgba(132, 132, 132, 0.3);
+    }
+      .App #now_playing .panel .controls {
+        display: flex;
+        justify-content: space-evenly;
+        height: 80px;
+        padding: 0 15px;
+      }
+        .App #now_playing .panel .controls .shuffle, .repeat, .next {
+          width: 55px;
+          height: auto;
+          border-radius: 10px;
+          background-position: center center;
+          background-repeat: no-repeat;
+          background-size: 20px;
+          margin: 5px 0;
+          padding: 5px 60px 0 0;
+          background-color: #fff;
+          cursor: pointer;
+          transition: background-color .3s ease;
+          -webkit-transition: background-color .3s ease;
+        }
+        .App #now_playing .panel .controls .shuffle:hover, .repeat:hover, .next:hover {
+          background-color: #eee;
+          transition: background-color .3s ease;
+          -webkit-transition: background-color .3s ease;
+        }
+          .App #now_playing .panel .controls {
+            color: rgba(105, 99, 99, 0.746);
+          }
+          .App #now_playing .panel .controls .clicked {
+            color: rgba(95, 155, 204, 0.746);
+          }
+/* ============================================================================== */
 
 .App #content {
   height:87vh;
@@ -100,6 +141,20 @@ code {
   border-width: 2px;
   border-color: #f4511c;
   background-color:#e8eaf6;
+}
+
+.App #queuing_button {
+  font-size: 3vw;
+  margin: 15px 15px;
+  cursor: pointer;
+}
+.App #queuing_button:hover {
+  color: #3bc7ff;
+}
+.App .disabled {
+  color: rgb(156, 156, 156);
+  pointer-events: none;
+  cursor: default;
 }
 
 .App .btn-floating.btn-small  {

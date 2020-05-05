@@ -114,7 +114,7 @@ class AudioInfo extends Component
             });
     }
 
-    componentWillMount()
+    UNSAFE_componentWillMount()
     {
         if (this.props.location.audioInfo !== undefined)
         {
